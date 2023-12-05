@@ -10,22 +10,22 @@ import tempfile
 import numpy as np
 
 
-def get_freer_gpu():
-    with tempfile.TemporaryDirectory() as tmpdir:
-        tmp_fname = os.path.join(tmpdir, "tmp")
-        os.system(f'nvidia-smi -q -d Memory |grep -A5 GPU|grep Free >"{tmp_fname}"')
-        if os.path.isfile(tmp_fname):
-            memory_available = [int(x.split()[2]) for x in open(tmp_fname, 'r').readlines()]
-            if len(memory_available) > 0:
-                return np.argmax(memory_available)
-    return None  # The grep doesn't work with all GPUs. If it fails we ignore it.
+# def get_freer_gpu():
+#     with tempfile.TemporaryDirectory() as tmpdir:
+#         tmp_fname = os.path.join(tmpdir, "tmp")
+#         os.system(f'nvidia-smi -q -d Memory |grep -A5 GPU|grep Free >"{tmp_fname}"')
+#         if os.path.isfile(tmp_fname):
+#             memory_available = [int(x.split()[2]) for x in open(tmp_fname, 'r').readlines()]
+#             if len(memory_available) > 0:
+#                 return np.argmax(memory_available)
+#     return None  # The grep doesn't work with all GPUs. If it fails we ignore it.
 
-gpu = get_freer_gpu()
-if gpu is not None:
-    os.environ["CUDA_VISIBLE_DEVICES"] = str(gpu)
-    print(f"CUDA_VISIBLE_DEVICES set to {gpu}")
-else:
-    print(f"Did not set GPU.")
+# gpu = get_freer_gpu()
+# if gpu is not None:
+#     os.environ["CUDA_VISIBLE_DEVICES"] = str(gpu)
+#     print(f"CUDA_VISIBLE_DEVICES set to {gpu}")
+# else:
+#     print(f"Did not set GPU.")
 
 import torch
 import torch.utils.data
@@ -97,9 +97,11 @@ def main():
     p.add_argument('--config-path', type=str, required=True)
     p.add_argument('--log-dir', type=str, default=None)
     p.add_argument('--seed', type=int, default=0)
+    p.add_argument('--device', type=int, default=0)
     p.add_argument('override', nargs=argparse.REMAINDER)
 
     args = p.parse_args()
+    os.environ["CUDA_VISIBLE_DEVICES"] = f"cuda:{args.device}"
 
     # Set random seed
     np.random.seed(args.seed)
@@ -116,8 +118,11 @@ def main():
     # note that all values are strings, so code should assume incorrect data-types for anything
     # that's derived from config - and should not a string.
     overrides: List[str] = args.override
+    print(overrides)
+    
     overrides_dict = {ovr.split("=")[0]: ovr.split("=")[1] for ovr in overrides}
     config.update(overrides_dict)
+    config['data_dirs'] = [config['data_dirs'][0] + config['expname']]
     if "keyframes" in config:
         model_type = "video"
     elif "appearance_embedding_dim" in config:
