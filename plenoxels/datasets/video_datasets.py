@@ -436,6 +436,7 @@ def load_llffvideo_data(videopaths: List[str],
         out_h=intrinsics.height,
         out_w=intrinsics.width,
         load_every=keyframes_take_each if keyframes else 1,
+        test=split=="test" or split=="render"
     )
     imgs, poses, median_imgs, timestamps = zip(*loaded)
     # Stack everything together

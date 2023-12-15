@@ -35,6 +35,7 @@ from plenoxels.runners import static_trainer
 from plenoxels.utils.create_rendering import render_to_path, decompose_space_time
 from plenoxels.utils.parse_args import parse_optfloat
 
+import wandb
 
 def setup_logging(log_level=logging.INFO):
     handlers = [logging.StreamHandler(sys.stdout)]
@@ -103,6 +104,8 @@ def main():
     args = p.parse_args()
     os.environ["CUDA_VISIBLE_DEVICES"] = f"cuda:{args.device}"
 
+    wandb.init(project="K-planes", sync_tensorboard=True)
+
     # Set random seed
     np.random.seed(args.seed)
     torch.manual_seed(args.seed)
@@ -162,6 +165,7 @@ def main():
     else:
         trainer.train()
 
+    wandb.finish()
 
 if __name__ == "__main__":
     main()

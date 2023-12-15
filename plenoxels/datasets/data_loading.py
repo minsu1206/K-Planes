@@ -11,6 +11,9 @@ import imageio.v3 as iio
 
 from plenoxels.utils.my_tqdm import tqdm
 
+import cv2
+import glob
+
 pil2tensor = torchvision.transforms.ToTensor()
 # increase ulimit -n (number of open files) otherwise parallel loading might fail
 rlimit = resource.getrlimit(resource.RLIMIT_NOFILE)
@@ -90,26 +93,40 @@ def _parallel_loader_nerf_image_pose(args):
     return _load_nerf_image_pose(**args)
 
 
+# TODO: call frames , not video
 def _load_video_1cam(idx: int,
                      paths: List[str],
                      poses: torch.Tensor,
                      out_h: int,
                      out_w: int,
-                     load_every: int = 1
+                     load_every: int = 1,
+                     test: bool = False
                      ):  # -> Tuple[List[torch.Tensor], torch.Tensor, List[int]]:
     filters = [
         ("scale", f"w={out_w}:h={out_h}")
     ]
-    all_frames = iio.imread(
-        paths[idx], plugin='pyav', format='rgb24', constant_framerate=True, thread_count=2,
-        filter_sequence=filters,)
+    # print("parallel video load : ", paths, idx) # '/workspace/dataset/N3DV/coffee_martini/cam01.mp4'
+    # all_frames = iio.imread(
+    #     paths[idx], plugin='pyav', format='rgb24', constant_framerate=True, thread_count=2,
+    #     filter_sequence=filters,)
+    video_path = paths[idx]
+    video_name = os.path.basename(video_path)
+    
+    if not test:
+        all_frames = sorted(glob.glob(video_path.replace(video_name, f"frames/{video_name.split('.mp4')[0]}") + "/*.jpg"))
+    else:
+        print("parallel_load : ", test, video_path) 
+        all_frames = sorted(glob.glob(video_path.replace(video_name, f"frames_2/{video_name.split('.mp4')[0]}") + "/*.png"))
+       
     imgs, timestamps = [], []
-    for frame_idx, frame in enumerate(all_frames):
+    for frame_idx, frame_path in enumerate(all_frames):
         if frame_idx % load_every != 0:
             continue
         if frame_idx >= 300:  # Only look at the first 10 seconds
             break
         # Frame is np.ndarray in uint8 dtype (H, W, C)
+        frame = cv2.imread(frame_path)
+        frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         imgs.append(
             torch.from_numpy(frame)
         )
@@ -130,6 +147,7 @@ def _parallel_loader_video(args):
 def parallel_load_images(tqdm_title,
                          dset_type: str,
                          num_images: int,
+                         test: bool,
                          **kwargs) -> List[Any]:
     max_threads = 10
     if dset_type == 'llff':
@@ -146,7 +164,7 @@ def parallel_load_images(tqdm_title,
         raise ValueError(dset_type)
     p = Pool(min(max_threads, num_images))
 
-    iterator = p.imap(fn, [{"idx": i, **kwargs} for i in range(num_images)])
+    iterator = p.imap(fn, [{"idx": i, "test": test, **kwargs} for i in range(num_images)])
     outputs = []
     for _ in tqdm(range(num_images), desc=tqdm_title):
         out = next(iterator)
