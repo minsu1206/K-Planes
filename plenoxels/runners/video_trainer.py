@@ -201,6 +201,8 @@ def init_tr_data(data_downsample, data_dir, **kwargs):
         isg=isg, keyframes=keyframes, contraction=kwargs['contract'], ndc=kwargs['ndc'],
         near_scaling=float(kwargs.get('near_scaling', 0)), ndc_far=float(kwargs.get('ndc_far', 0)),
         scene_bbox=kwargs['scene_bbox'],
+        use_intrinsic=kwargs.get('use_intrinsic', False),
+        pose_npy_suffix=kwargs.get('pose_npy_suffix', '')
     )
     if ist:
         tr_dset.switch_isg2ist()  # this should only happen in case we're reloading
@@ -213,14 +215,17 @@ def init_tr_data(data_downsample, data_dir, **kwargs):
     return {"tr_loader": tr_loader, "tr_dset": tr_dset}
 
 
-def init_ts_data(data_dir, split, **kwargs):
-    downsample = 2.0 # Both D-NeRF and DyNeRF use downsampling by 2
+def init_ts_data(data_dir, split, data_downsample=2, **kwargs):
+    # downsample = 2.0 # Both D-NeRF and DyNeRF use downsampling by 2
+    downsample = data_downsample
     ts_dset = Video360Dataset(
         data_dir, split=split, downsample=downsample,
         max_cameras=kwargs.get('max_test_cameras', None), max_tsteps=kwargs.get('max_test_tsteps', None),
         contraction=kwargs['contract'], ndc=kwargs['ndc'],
         near_scaling=float(kwargs.get('near_scaling', 0)), ndc_far=float(kwargs.get('ndc_far', 0)),
         scene_bbox=kwargs['scene_bbox'],
+        use_intrinsic=kwargs.get('use_intrinsic', False),
+        pose_npy_suffix=kwargs.get('pose_npy_suffix', '')
     )
     return {"ts_dset": ts_dset}
 
@@ -233,5 +238,5 @@ def load_data(data_downsample, data_dirs, validate_only, render_only, **kwargs):
     else:
         od.update(tr_loader=None, tr_dset=None)
     test_split = 'render' if render_only else 'test'
-    od.update(init_ts_data(data_dirs[0], split=test_split, **kwargs))   # load test data
+    od.update(init_ts_data(data_dirs[0], split=test_split, data_downsample=data_downsample, **kwargs))   # load test data
     return od

@@ -105,19 +105,19 @@ def _load_video_1cam(idx: int,
     filters = [
         ("scale", f"w={out_w}:h={out_h}")
     ]
+    # ---------- original ---------- #
     # print("parallel video load : ", paths, idx) # '/workspace/dataset/N3DV/coffee_martini/cam01.mp4'
     # all_frames = iio.imread(
     #     paths[idx], plugin='pyav', format='rgb24', constant_framerate=True, thread_count=2,
     #     filter_sequence=filters,)
     video_path = paths[idx]
     video_name = os.path.basename(video_path)
-    
-    if not test:
-        all_frames = sorted(glob.glob(video_path.replace(video_name, f"frames/{video_name.split('.mp4')[0]}") + "/*.jpg"))
-    else:
-        print("parallel_load : ", test, video_path) 
-        all_frames = sorted(glob.glob(video_path.replace(video_name, f"frames_2/{video_name.split('.mp4')[0]}") + "/*.png"))
-       
+    print(f"[INFO] : data_loading.py / _load_video_1cam :load frames from {video_path}")
+    all_frames = sorted(glob.glob(os.path.join(video_path, "images/*.jpg")))
+    if len(all_frames) == 0:
+        all_frames = sorted(glob.glob(os.path.join(video_path, "images/*.png")))
+    if len(all_frames) == 0:
+        raise ValueError(f"No Images at {video_path}")
     imgs, timestamps = [], []
     for frame_idx, frame_path in enumerate(all_frames):
         if frame_idx % load_every != 0:

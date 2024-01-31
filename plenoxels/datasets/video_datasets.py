@@ -41,7 +41,10 @@ class Video360Dataset(BaseDataset):
                  ndc: bool = False,
                  scene_bbox: Optional[List] = None,
                  near_scaling: float = 0.9,
-                 ndc_far: float = 2.6):
+                 ndc_far: float = 2.6,
+                 use_intrinsic: bool = False,
+                 pose_npy_suffix: str = ''
+                 ):
         self.keyframes = keyframes
         self.max_cameras = max_cameras
         self.max_tsteps = max_tsteps
@@ -67,7 +70,8 @@ class Video360Dataset(BaseDataset):
             if split == "render":
                 assert ndc, "Unable to generate render poses without ndc: don't know near-far."
                 per_cam_poses, per_cam_near_fars, intrinsics, _ = load_llffvideo_poses(
-                    datadir, downsample=self.downsample, split='all', near_scaling=self.near_scaling)
+                    datadir, downsample=self.downsample, split='all', near_scaling=self.near_scaling,
+                    pose_npy_suffix=pose_npy_suffix)
                 render_poses = generate_spiral_path(
                     per_cam_poses.numpy(), per_cam_near_fars.numpy(), n_frames=300,
                     n_rots=2, zrate=0.5, dt=self.near_scaling, percentile=60)
@@ -77,7 +81,8 @@ class Video360Dataset(BaseDataset):
                 imgs = None
             else:
                 per_cam_poses, per_cam_near_fars, intrinsics, videopaths = load_llffvideo_poses(
-                    datadir, downsample=self.downsample, split=split, near_scaling=self.near_scaling)
+                    datadir, downsample=self.downsample, split=split, near_scaling=self.near_scaling,
+                    pose_npy_suffix=pose_npy_suffix)
                 if split == 'test':
                     keyframes = False
                 poses, imgs, timestamps, self.median_imgs = load_llffvideo_data(
@@ -207,6 +212,26 @@ class Video360Dataset(BaseDataset):
         if self.isg:
             self.enable_isg()
 
+        self.use_intrinsic = use_intrinsic
+        if self.use_intrinsic:
+            suffix = '_' + pose_npy_suffix if pose_npy_suffix != '' else ''
+            intrinsic_npy = np.load(os.path.join(datadir, f'intrinsic{suffix}.npy'))
+            print(f"[INFO] : load camera extra intrinsics from {os.path.join(datadir, f'intrinsic{suffix}.npy')}")
+            self.extra_intrinsic = []
+            for intrinsic_mat in intrinsic_npy:
+                intrinsic_mat3x3 = intrinsic_mat.reshape(3,3)
+                self.extra_intrinsic.append(
+                    Intrinsics(
+                        width=self.intrinsics.width, height=self.intrinsics.height, 
+                        focal_x=intrinsic_mat3x3[0,0], focal_y=intrinsic_mat3x3[1,1], 
+                        center_x=self.intrinsics.center_x, center_y=self.intrinsics.center_y)
+                    )
+            print(f"[INFO] : check camera extra intrinsics")
+            print(self.extra_intrinsic)
+
+        else: 
+            self.extra_intrinsic = None
+        
         log.info(f"VideoDataset contracted={self.is_contracted}, ndc={self.is_ndc}. "
                  f"Loaded {self.split} set from {self.datadir}: "
                  f"{len(self.poses)} images of size {self.img_h}x{self.img_w}. "
@@ -279,10 +304,16 @@ class Video360Dataset(BaseDataset):
             out['imgs'] = (self.imgs[index] / 255.0).view(-1, self.imgs.shape[-1])
 
         c2w = self.poses[image_id]                                    # [num_rays or 1, 3, 4]
-        camera_dirs = stack_camera_dirs(x, y, self.intrinsics, True)  # [num_rays, 3]
+        # 0131 ---------------------------------------------------------------------------- #
+        if isinstance(self.extra_intrinsic, list):
+            intrinsic_input = self.extra_intrinsic[image_id]
+        else:
+            intrinsic_input = self.intrinsics
+        camera_dirs = stack_camera_dirs(x, y, intrinsic_input, True)  # [num_rays, 3]
         out['rays_o'], out['rays_d'] = get_rays(
-            camera_dirs, c2w, ndc=self.is_ndc, ndc_near=1.0, intrinsics=self.intrinsics,
+            camera_dirs, c2w, ndc=self.is_ndc, ndc_near=1.0, intrinsics=intrinsic_input,
             normalize_rd=True)                                        # [num_rays, 3]
+        # --------------------------------------------------------------------------------- #
 
         imgs = out['imgs']
         # Decide BG color
@@ -375,8 +406,9 @@ def load_360video_frames(datadir, split, max_cameras: int, max_tsteps: Optional[
 def load_llffvideo_poses(datadir: str,
                          downsample: float,
                          split: str,
-                         near_scaling: float) -> Tuple[
-                            torch.Tensor, torch.Tensor, Intrinsics, List[str]]:
+                         near_scaling: float,
+                         pose_npy_suffix:str='' # 0131
+                         ) -> Tuple[torch.Tensor, torch.Tensor, Intrinsics, List[str]]:
     """Load poses and metadata for LLFF video.
 
     Args:
@@ -391,11 +423,18 @@ def load_llffvideo_poses(datadir: str,
         Intrinsics: The camera intrinsics. These are the same for every camera.
         List[str]: List of length N containing the path to each camera's data.
     """
-    poses, near_fars, intrinsics = load_llff_poses_helper(datadir, downsample, near_scaling)
+    # 0131
+    poses, near_fars, intrinsics = load_llff_poses_helper(datadir, downsample, near_scaling,
+                                                            pose_npy_suffix=pose_npy_suffix)
 
     videopaths = np.array(glob.glob(os.path.join(datadir, '*.mp4')))  # [n_cameras]
+    if len(videopaths) == 0:
+        print(f"[INFO] : video_datasets.py / load_llff_poses : set video/image path")
+        print(" "*10, os.path.join(datadir, f"frames{int(downsample)}"))
+        videopaths = np.array(glob.glob(os.path.join(datadir, f"frames{int(downsample)}/*")))
+        
     assert poses.shape[0] == len(videopaths), \
-        'Mismatch between number of cameras and number of poses!'
+        f'Mismatch between number of cameras and number of poses! : {poses.shape[0]} != {len(videopaths)}'
     videopaths.sort()
 
     # The first camera is reserved for testing, following https://github.com/facebookresearch/Neural_3D_Video/releases/tag/v1.0
