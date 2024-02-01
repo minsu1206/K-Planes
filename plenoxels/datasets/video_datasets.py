@@ -221,13 +221,10 @@ class Video360Dataset(BaseDataset):
             for intrinsic_mat in intrinsic_npy:
                 intrinsic_mat3x3 = intrinsic_mat.reshape(3,3)
                 self.extra_intrinsic.append(
-                    Intrinsics(
-                        width=self.intrinsics.width, height=self.intrinsics.height, 
-                        focal_x=intrinsic_mat3x3[0,0], focal_y=intrinsic_mat3x3[1,1], 
-                        center_x=self.intrinsics.center_x, center_y=self.intrinsics.center_y)
-                    )
+                    torch.tensor([intrinsic_mat3x3[0,0], intrinsic_mat3x3[1,1], intrinsic_mat3x3[0,2], intrinsic_mat3x3[1,2]]))   # [fx,fy,cx,cy] x length of video
+            self.extra_intrinsic = torch.stack(self.extra_intrinsic)
             print(f"[INFO] : check camera extra intrinsics")
-            print(self.extra_intrinsic)
+            # print(self.extra_intrinsic)       # [num of cam, 4]
 
         else: 
             self.extra_intrinsic = None
@@ -302,18 +299,19 @@ class Video360Dataset(BaseDataset):
 
         if self.imgs is not None:
             out['imgs'] = (self.imgs[index] / 255.0).view(-1, self.imgs.shape[-1])
-
+        
+        # print(self.poses.shape, len(image_id), image_id[0]) # (2700,3,4) / 4096 / tensor(id)
         c2w = self.poses[image_id]                                    # [num_rays or 1, 3, 4]
-        # 0131 ---------------------------------------------------------------------------- #
-        if isinstance(self.extra_intrinsic, list):
-            intrinsic_input = self.extra_intrinsic[image_id]
+        # 0131/0201-------------------------------------------------------------------- #
+        if self.extra_intrinsic is not None:
+            intrinsic_input = self.extra_intrinsic[(image_id/len(self.timestamps)).floor().long()]
         else:
             intrinsic_input = self.intrinsics
         camera_dirs = stack_camera_dirs(x, y, intrinsic_input, True)  # [num_rays, 3]
         out['rays_o'], out['rays_d'] = get_rays(
             camera_dirs, c2w, ndc=self.is_ndc, ndc_near=1.0, intrinsics=intrinsic_input,
             normalize_rd=True)                                        # [num_rays, 3]
-        # --------------------------------------------------------------------------------- #
+        # ----------------------------------------------------------------------------- #
 
         imgs = out['imgs']
         # Decide BG color

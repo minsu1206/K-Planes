@@ -43,13 +43,23 @@ def stack_camera_dirs(x: torch.Tensor, y: torch.Tensor, intrinsics: Intrinsics, 
     # see https://github.com/bmild/nerf/issues/24
     x = x.float()
     y = y.float()
-    return torch.stack([
-        (x - intrinsics.center_x) / intrinsics.focal_x,
-        (y - intrinsics.center_y) / intrinsics.focal_y
-        * (-1.0 if opengl_camera else 1.0),
-        torch.full_like(x, fill_value=-1.0 if opengl_camera else 1.0)
-    ], -1)  # (H, W, 3)
-
+    # 0201------------------------------------------------------------------------- #
+    if isinstance(intrinsics, Intrinsics):
+        return torch.stack([
+            (x - intrinsics.center_x) / intrinsics.focal_x,
+            (y - intrinsics.center_y) / intrinsics.focal_y
+            * (-1.0 if opengl_camera else 1.0),
+            torch.full_like(x, fill_value=-1.0 if opengl_camera else 1.0)
+        ], -1)  # (H, W, 3)
+    else:   # torch.tensor (N,4)
+        # print(f"[DEBUG] : ray_utils / stack_camera_dirs : ", x.shape, y.shape, intrinsics.shape)
+        return torch.stack([
+            (x - intrinsics[:,2]) / intrinsics[:,0],
+            (y - intrinsics[:,1]) / intrinsics[:,3] *
+            (-1.0 if opengl_camera else 1.0),
+            torch.full_like(x, fill_value=-1.0 if opengl_camera else 1.0)
+        ], -1)
+    # ----------------------------------------------------------------------------- #
 
 def get_ray_directions(intrinsics: Intrinsics, opengl_camera: bool, add_half: bool = True) -> torch.Tensor:
     """
@@ -108,8 +118,15 @@ def ndc_rays_blender(intrinsics: Intrinsics, near: float, rays_o: torch.Tensor,
     rays_o = rays_o + t[..., None] * rays_d
 
     # Projection
-    ndc_coef_x = - (2 * intrinsics.focal_x) / intrinsics.width
-    ndc_coef_y = - (2 * intrinsics.focal_y) / intrinsics.height
+    # print(f"[DEBUG] : ray_utils.py / ncd_rays_blender : ", rays_o.shape, rays_d.shape) # (4096,3) , (4096, 3)
+    # 0201------------------------------------------------------------------------- #
+    if isinstance(intrinsics, Intrinsics):
+        ndc_coef_x = - (2 * intrinsics.focal_x) / intrinsics.width
+        ndc_coef_y = - (2 * intrinsics.focal_y) / intrinsics.height
+    else:
+        ndc_coef_x = - intrinsics[:, 0] / intrinsics[:,2]   # NOTE: assume width = center_x * 2
+        ndc_coef_y = - intrinsics[:, 1] / intrinsics[:,3]   # NOTE: assume height = center_y * 2
+    # ----------------------------------------------------------------------------- #
     o0 = ndc_coef_x * rays_o[..., 0] / rays_o[..., 2]
     o1 = ndc_coef_y * rays_o[..., 1] / rays_o[..., 2]
     o2 = 1. + 2. * near / rays_o[..., 2]

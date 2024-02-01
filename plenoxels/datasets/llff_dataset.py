@@ -129,7 +129,6 @@ def load_llff_poses_helper(datadir: str, downsample: float, near_scaling: float,
     print(f"[INFO] : llff_dataset.py / load_llff_poses_helper : load camera poses from {os.path.join(datadir, f'poses_bounds{suffix}.npy')}")
     poses_bounds = np.load(os.path.join(datadir, f'poses_bounds{suffix}.npy'))  # (N_images, 17)
     poses, near_fars, intrinsics = _split_poses_bounds(poses_bounds)
-
     # Step 1: rescale focal length according to training resolution
     intrinsics.scale(1 / downsample)
 
