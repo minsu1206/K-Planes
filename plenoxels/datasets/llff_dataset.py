@@ -59,7 +59,7 @@ class LLFFDataset(BaseDataset):
         if contraction:
             bbox = torch.tensor([[-2., -2., -2.], [2., 2., 2.]])
             self.near_fars = near_fars
-        else:
+        else:   # near-far calculated above is not used.
             bbox = torch.tensor([[-1.5, -1.67, -1.], [1.5, 1.67, 1.]])
             self.near_fars = torch.tensor([[0.0, self.ndc_far]]).repeat(num_images, 1)
 
@@ -127,6 +127,7 @@ def load_llff_poses_helper(datadir: str, downsample: float, near_scaling: float,
                             pose_npy_suffix:str='') -> Tuple[np.ndarray, np.ndarray, Intrinsics]:
     suffix = '_' + pose_npy_suffix if pose_npy_suffix != '' else ''
     print(f"[INFO] : llff_dataset.py / load_llff_poses_helper : load camera poses from {os.path.join(datadir, f'poses_bounds{suffix}.npy')}")
+    print(f'[INFO] : near_scaling : ', near_scaling)
     poses_bounds = np.load(os.path.join(datadir, f'poses_bounds{suffix}.npy'))  # (N_images, 17)
     poses, near_fars, intrinsics = _split_poses_bounds(poses_bounds)
     # Step 1: rescale focal length according to training resolution
@@ -146,7 +147,7 @@ def load_llff_poses_helper(datadir: str, downsample: float, near_scaling: float,
     # the nearest depth is at 1/0.75=1.33
     near_fars /= scale_factor
     poses[..., 3] /= scale_factor
-
+    # print(f'[INFO] : near_fars /= scale_factor :', near_fars, scale_factor) # [nan, inf]
     return poses, near_fars, intrinsics
 
 

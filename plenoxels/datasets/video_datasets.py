@@ -42,6 +42,7 @@ class Video360Dataset(BaseDataset):
                  scene_bbox: Optional[List] = None,
                  near_scaling: float = 0.9,
                  ndc_far: float = 2.6,
+                 ndc_near: float = 1.0, 
                  use_intrinsic: bool = False,
                  pose_npy_suffix: str = ''
                  ):
@@ -57,6 +58,7 @@ class Video360Dataset(BaseDataset):
         self.global_scale = torch.tensor([1, 1, 1])
         self.near_scaling = near_scaling
         self.ndc_far = ndc_far
+        self.ndc_near = ndc_near
         self.median_imgs = None
         if contraction and ndc:
             raise ValueError("Options 'contraction' and 'ndc' are exclusive.")
@@ -220,10 +222,16 @@ class Video360Dataset(BaseDataset):
             self.extra_intrinsic = []
             for intrinsic_mat in intrinsic_npy:
                 intrinsic_mat3x3 = intrinsic_mat.reshape(3,3)
-                self.extra_intrinsic.append(
-                    torch.tensor([intrinsic_mat3x3[0,0], intrinsic_mat3x3[1,1], intrinsic_mat3x3[0,2], intrinsic_mat3x3[1,2]]))   # [fx,fy,cx,cy] x length of video
+                intrinsic_mat3x3 /= self.downsample
+                intrinsic_mat3x3 = np.float32(intrinsic_mat3x3)
+                fx = intrinsic_mat3x3[0,0]
+                fy = intrinsic_mat3x3[1,1]
+                cx = intrinsic_mat3x3[0,2]
+                cy = intrinsic_mat3x3[1,2]
+                print(f"[INFO] : extra_intrinsic w/ downsample effect : ", [fx, fy, cx, cy])
+                self.extra_intrinsic.append(torch.tensor([fx,fy,cx,cy]))
             self.extra_intrinsic = torch.stack(self.extra_intrinsic)
-            print(f"[INFO] : check camera extra intrinsics")
+            print(f"[INFO] : check camera extra intrinsics : ", self.extra_intrinsic, self.extra_intrinsic.dtype)
             # print(self.extra_intrinsic)       # [num of cam, 4]
 
         else: 
@@ -283,7 +291,7 @@ class Video360Dataset(BaseDataset):
                 index = x + y * w + image_id * h * w
             x, y = x + 0.5, y + 0.5
         else:
-            image_id = [index]
+            image_id = torch.tensor([index])
             x, y = create_meshgrid(height=h, width=w, dev=dev, add_half=True, flat=True)
 
         out = {
@@ -309,7 +317,7 @@ class Video360Dataset(BaseDataset):
             intrinsic_input = self.intrinsics
         camera_dirs = stack_camera_dirs(x, y, intrinsic_input, True)  # [num_rays, 3]
         out['rays_o'], out['rays_d'] = get_rays(
-            camera_dirs, c2w, ndc=self.is_ndc, ndc_near=1.0, intrinsics=intrinsic_input,
+            camera_dirs, c2w, ndc=self.is_ndc, ndc_near=self.ndc_near, intrinsics=intrinsic_input,
             normalize_rd=True)                                        # [num_rays, 3]
         # ----------------------------------------------------------------------------- #
 

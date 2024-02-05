@@ -117,7 +117,13 @@ def _load_video_1cam(idx: int,
     if len(all_frames) == 0:
         all_frames = sorted(glob.glob(os.path.join(video_path, "images/*.png")))
     if len(all_frames) == 0:
+        all_frames = sorted(glob.glob(os.path.join(video_path, "*.png")))
+    if len(all_frames) == 0:
+        all_frames = sorted(glob.glob(os.path.join(video_path, "*.jpg")))
+    
+    if len(all_frames) == 0:
         raise ValueError(f"No Images at {video_path}")
+    
     imgs, timestamps = [], []
     for frame_idx, frame_path in enumerate(all_frames):
         if frame_idx % load_every != 0:
@@ -133,6 +139,7 @@ def _load_video_1cam(idx: int,
         timestamps.append(frame_idx)
     imgs = torch.stack(imgs, 0)
     med_img, _ = torch.median(imgs, dim=0)  # [h, w, 3]
+    print(f"[INFO] : data_loading.py / _load_video_1cam : {video_path} > loading done")
     return (imgs,
             poses[idx].expand(len(timestamps), -1, -1),
             med_img,

@@ -202,7 +202,8 @@ def init_tr_data(data_downsample, data_dir, **kwargs):
         near_scaling=float(kwargs.get('near_scaling', 0)), ndc_far=float(kwargs.get('ndc_far', 0)),
         scene_bbox=kwargs['scene_bbox'],
         use_intrinsic=kwargs.get('use_intrinsic', False),
-        pose_npy_suffix=kwargs.get('pose_npy_suffix', '')
+        pose_npy_suffix=kwargs.get('pose_npy_suffix', ''),
+        ndc_near=float(kwargs.get('ndc_near', 1.0))
     )
     if ist:
         tr_dset.switch_isg2ist()  # this should only happen in case we're reloading
@@ -225,7 +226,8 @@ def init_ts_data(data_dir, split, data_downsample=2, **kwargs):
         near_scaling=float(kwargs.get('near_scaling', 0)), ndc_far=float(kwargs.get('ndc_far', 0)),
         scene_bbox=kwargs['scene_bbox'],
         use_intrinsic=kwargs.get('use_intrinsic', False),
-        pose_npy_suffix=kwargs.get('pose_npy_suffix', '')
+        pose_npy_suffix=kwargs.get('pose_npy_suffix', ''),
+        ndc_near=float(kwargs.get('ndc_near', 1.0))
     )
     return {"ts_dset": ts_dset}
 

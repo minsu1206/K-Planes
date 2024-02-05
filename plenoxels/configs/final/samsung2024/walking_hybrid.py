@@ -9,6 +9,7 @@ config = {
  'contract': False,
  'ndc': True,
  'ndc_far': 2.6,
+ 'ndc_near': 1.0,
  'near_scaling': 0.95,
  'isg': False,
  'isg_step': -1,
