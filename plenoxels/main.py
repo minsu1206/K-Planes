@@ -125,7 +125,7 @@ def main():
     
     overrides_dict = {ovr.split("=")[0]: ovr.split("=")[1] for ovr in overrides}
     config.update(overrides_dict)
-    config['data_dirs'] = [config['data_dirs'][0] + config['expname']]
+    # config['data_dirs'] = [config['data_dirs'][0] + config['expname']]
     if "keyframes" in config:
         model_type = "video"
     elif "appearance_embedding_dim" in config:

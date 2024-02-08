@@ -179,6 +179,8 @@ class LowrankModel(nn.Module):
             nears = ones * nears
             fars = ones * fars
 
+        print(f"[INFO] : near-far right before sampling :", nears, fars)
+
         ray_bundle = RayBundle(origins=rays_o, directions=rays_d, nears=nears, fars=fars)
         # Note: proposal sampler mustn't use timestamps (=camera-IDs) with appearance embedding,
         #       since the appearance embedding should not affect density. We still pass them in the
