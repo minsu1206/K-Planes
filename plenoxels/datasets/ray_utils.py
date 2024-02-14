@@ -280,6 +280,83 @@ def generate_hemispherical_orbit(poses: torch.Tensor, n_frames=120):
     render_poses = torch.stack(render_poses, dim=0)
     return render_poses
 
+# customizing
+def generate_arc_orbit(poses: np.ndarray, 
+                       near_fars: np.ndarray,
+                       n_frames=120,
+                       n_cycle=2,
+                       dt=0.75,
+                       offset=1/6,
+                       percentile=90):
+    """Calculates a render path which orbits around the z-axis.
+    Based on https://github.com/google-research/google-research/blob/342bfc150ef1155c5254c1e6bd0c912893273e8d/regnerf/internal/datasets.py
+    """
+    c2w = average_poses(poses)  # [3, 4]
+    print(f"[DEBUG] : c2w trans : {c2w[:, -1]}")
+    up = normalize(poses[:, :3, 1].sum(0))
+
+    close_depth, inf_depth = np.min(near_fars) * 1.0, np.max(near_fars) * 5.0
+    focal = 1.0 / (((1.0 - dt) / close_depth + dt/inf_depth))
+
+    positions = poses[:, :3, 3]
+    # radii_ = np.percentile(np.abs(positions), percentile, 0)
+    # radii = np.concatenate([radii_, [1.]])
+    radii = np.sqrt(np.mean(np.sum(positions ** 2, axis=-1)))
+    print(f"[DEBUG] : original lookat : {c2w @ np.array([0, 0, -focal, 1.0])}")
+    print(f"[DEBUG] : raddi : ", radii)
+    # sin_phi = np.mean(positions[:, 2], axis=0) / radii # (0,0,0)
+    # cos_phi = np.sqrt(1 - sin_phi ** 2) # (1,1,1)
+    # print(f"[DEBUG] : sin_phi = {sin_phi} / cos_phi = {cos_phi}")
+    cos_phi = 1.0
+    sin_phi = 0.0
+
+    render_poses = []
+    for cycle in range(n_cycle):
+            # synthetic-like method
+        n_frames_cycle = n_frames // n_cycle
+        if cycle % 2 == 0:
+            start = offset * np.pi
+            end = np.pi - offset * np.pi
+        else:
+            start = np.pi - offset * np.pi
+            end = offset * np.pi
+
+        for theta in np.linspace(start, end, n_frames_cycle, endpoint=False):
+            # t = radii * torch.tensor([cos_phi * np.cos(theta), - cos_phi * np.sin(theta), sin_phi, 1.]) # ver5 ; 밑으로 arc. 
+            t = radii * torch.tensor([cos_phi * np.cos(theta), sin_phi, cos_phi * np.sin(theta), 1.]) # ver7
+            t = t.numpy()
+            position = c2w @ t
+            # lookat = c2w @ np.array([0, 0, -focal, 1.0])
+            # z_axis = normalize(position - lookat)
+
+            # lookat = c2w @ rot_phi(-2/6 * np.pi).numpy() @ np.array([0, 0, -focal, 1.0]) # ver13
+            lookat = c2w @ rot_phi(-1/6 * np.pi).numpy()
+            lookat = lookat[:, -1]
+            print(f"[DEBUG] : lookat : {lookat}")
+            z_axis = normalize(position - lookat)
+
+            # ver8
+            # spherical = generate_spherical_poses(theta=theta, phi=0, radius=radii).numpy()
+            # lookat = c2w @ np.array([0, 0, -focal, 1.0])
+            # position = c2w @ spherical
+            # position = position[:, -1]
+            # print("shape check : ", spherical.shape, position.shape, lookat.shape)
+            # z_axis = normalize(position - lookat)
+
+            # # ver9
+            # t = radii * torch.tensor([cos_phi * np.cos(theta), sin_phi, cos_phi * np.sin(theta), 1.])
+            # t = t.numpy()
+            # # position = c2w @ rot_theta(theta).numpy() @ t
+            # position = rot_theta(theta).numpy() @ t # ver10
+            # position = position[:-1]
+            # # lookat = c2w @ np.array([0, 0, -focal, 1.0])
+            # # lookat = c2w[:, -1] # ver11
+            # lookat = c2w @ np.array([0, 0, -radii, 1.0])
+            # z_axis = normalize(position - lookat)
+            render_poses.append(viewmatrix(z_axis, up, position))
+            # render_poses.append(viewmatrix(normalize(position), up, position))
+            # render_poses.append(viewmatrix(z_axis, up, z_axis))
+    return np.stack(render_poses, axis=0)
 
 trans_t = lambda t: torch.Tensor([
     [1, 0, 0, 0],

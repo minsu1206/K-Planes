@@ -232,13 +232,14 @@ def init_ts_data(data_dir, split, data_downsample=2, **kwargs):
     return {"ts_dset": ts_dset}
 
 
-def load_data(data_downsample, data_dirs, validate_only, render_only, **kwargs):
+def load_data(data_downsample, data_dirs, validate_only, render_only, render_only_arc, **kwargs):
     assert len(data_dirs) == 1
     od: Dict[str, Any] = {}
-    if not validate_only and not render_only:
+    if not validate_only and not render_only and not render_only_arc:
         od.update(init_tr_data(data_downsample, data_dirs[0], **kwargs))    # load training data
     else:
         od.update(tr_loader=None, tr_dset=None)
     test_split = 'render' if render_only else 'test'
+    test_split = 'render_arc' if render_only_arc else test_split
     od.update(init_ts_data(data_dirs[0], split=test_split, data_downsample=data_downsample, **kwargs))   # load test data
     return od

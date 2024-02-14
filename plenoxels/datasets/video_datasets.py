@@ -15,7 +15,7 @@ from .data_loading import parallel_load_images
 from .intrinsics import Intrinsics
 from .llff_dataset import load_llff_poses_helper
 from .ray_utils import (
-    generate_spherical_poses, create_meshgrid, stack_camera_dirs, get_rays, generate_spiral_path
+    generate_spherical_poses, create_meshgrid, stack_camera_dirs, get_rays, generate_spiral_path, generate_arc_orbit
 )
 from .synthetic_nerf_dataset import (
     load_360_images, load_360_intrinsics,
@@ -69,14 +69,20 @@ class Video360Dataset(BaseDataset):
 
         # Note: timestamps are stored normalized between -1, 1.
         if dset_type == "llff":
-            if split == "render":
+            if split == "render" or split == "render_arc":
                 assert ndc, "Unable to generate render poses without ndc: don't know near-far."
                 per_cam_poses, per_cam_near_fars, intrinsics, _ = load_llffvideo_poses(
                     datadir, downsample=self.downsample, split='all', near_scaling=self.near_scaling,
                     pose_npy_suffix=pose_npy_suffix)
-                render_poses = generate_spiral_path(
-                    per_cam_poses.numpy(), per_cam_near_fars.numpy(), n_frames=300,
-                    n_rots=2, zrate=0.5, dt=self.near_scaling, percentile=60)
+                if "arc" in split:
+                    print("[INFO] : video_datasets.py / Video360Dataset : load arc-shaped camera path")
+                    render_poses = generate_arc_orbit(
+                        per_cam_poses.numpy(), per_cam_near_fars.numpy(), n_frames=300,
+                        n_cycle=4, dt=self.near_scaling, percentile=60)
+                else:
+                    render_poses = generate_spiral_path(
+                        per_cam_poses.numpy(), per_cam_near_fars.numpy(), n_frames=300,
+                        n_rots=2, zrate=0.5, dt=self.near_scaling, percentile=60)
                 self.poses = torch.from_numpy(render_poses).float()
                 self.per_cam_near_fars = torch.tensor([[0.4, self.ndc_far]])
                 timestamps = torch.linspace(0, 299, len(self.poses))

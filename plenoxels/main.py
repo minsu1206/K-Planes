@@ -45,13 +45,13 @@ def setup_logging(log_level=logging.INFO):
                         force=True)
 
 
-def load_data(model_type: str, data_downsample, data_dirs, validate_only: bool, render_only: bool, **kwargs):
+def load_data(model_type: str, data_downsample, data_dirs, validate_only: bool, render_only: bool, render_only_arc=False, **kwargs):
     data_downsample = parse_optfloat(data_downsample, default_val=1.0)
 
     if model_type == "video":
         return video_trainer.load_data(
             data_downsample, data_dirs, validate_only=validate_only,
-            render_only=render_only, **kwargs)
+            render_only=render_only, render_only_arc=render_only_arc, **kwargs)
     elif model_type == "phototourism":
         return phototourism_trainer.load_data(
             data_downsample, data_dirs, validate_only=validate_only,
@@ -95,6 +95,7 @@ def main():
     p.add_argument('--render-only', action='store_true')
     p.add_argument('--validate-only', action='store_true')
     p.add_argument('--spacetime-only', action='store_true')
+    p.add_argument('--render-only-arc', action='store_true')
     p.add_argument('--config-path', type=str, required=True)
     p.add_argument('--log-dir', type=str, default=None)
     p.add_argument('--seed', type=int, default=0)
@@ -103,8 +104,6 @@ def main():
 
     args = p.parse_args()
     os.environ["CUDA_VISIBLE_DEVICES"] = f"cuda:{args.device}"
-
-    wandb.init(project="K-planes", sync_tensorboard=True)
 
     # Set random seed
     np.random.seed(args.seed)
@@ -125,6 +124,11 @@ def main():
     
     overrides_dict = {ovr.split("=")[0]: ovr.split("=")[1] for ovr in overrides}
     config.update(overrides_dict)
+    if not (args.validate_only or args.render_only or args.spacetime_only or args.render_only_arc):
+        wandb.init(project="K-planes", 
+                name=f"{config['expname']}_useK={config['use_intrinsic']}", 
+                sync_tensorboard=True)
+
     # config['data_dirs'] = [config['data_dirs'][0] + config['expname']]
     if "keyframes" in config:
         model_type = "video"
@@ -135,20 +139,24 @@ def main():
     validate_only = args.validate_only
     render_only = args.render_only
     spacetime_only = args.spacetime_only
+    render_only_arc = args.render_only_arc
     if validate_only and render_only:
         raise ValueError("render_only and validate_only are mutually exclusive.")
     if render_only and spacetime_only:
         raise ValueError("render_only and spacetime_only are mutually exclusive.")
     if validate_only and spacetime_only:
         raise ValueError("validate_only and spacetime_only are mutually exclusive.")
+    if render_only_arc:
+        if (validate_only or render_only or spacetime_only):
+            raise ValueError("use render_only_arc as unique option. others are exclusive")
 
     pprint.pprint(config)
-    if validate_only or render_only:
+    if validate_only or render_only or render_only_arc:
         assert args.log_dir is not None and os.path.isdir(args.log_dir)
     else:
         save_config(config)
 
-    data = load_data(model_type, validate_only=validate_only, render_only=render_only or spacetime_only, **config)
+    data = load_data(model_type, validate_only=validate_only, render_only=render_only or spacetime_only, render_only_arc=render_only_arc, **config)
     config.update(data)
     trainer = init_trainer(model_type, **config)
     if args.log_dir is not None:
@@ -158,14 +166,14 @@ def main():
 
     if validate_only:
         trainer.validate()
-    elif render_only:
+    elif render_only or render_only_arc:
         render_to_path(trainer, extra_name="")
     elif spacetime_only:
         decompose_space_time(trainer, extra_name="")
     else:
         trainer.train()
-
-    wandb.finish()
+    if not (args.validate_only or args.render_only or args.spacetime_only or args.render_only_arc):
+        wandb.finish()
 
 if __name__ == "__main__":
     main()

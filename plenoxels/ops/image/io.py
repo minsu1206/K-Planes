@@ -72,7 +72,7 @@ def write_video_to_file(file_name, frames: List[np.ndarray]):
         height = sizes[:, 0].max()
         width = sizes[:, 1].max()
         video = cv2.VideoWriter(
-            file_name, cv2.VideoWriter_fourcc(*'mp4v'), 5, (width, height))
+            file_name, cv2.VideoWriter_fourcc(*'mp4v'), 30, (width, height))
         for img in frames:
             image = np.zeros((height, width, 3), dtype=np.uint8)
             h, w = img.shape[:2]
