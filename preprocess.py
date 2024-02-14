@@ -116,7 +116,47 @@ def process_frames(root_folder):
             new_img_path = os.path.join(new_img_dir, new_basename)
             cv2.imwrite(new_img_path, frame)
         print(f"[INFO] {image_dir} > {new_img_dir} Done!")
-        
+
+def process_frames2(root_folder):
+    """
+    example folder hierarchy
+    taekwondo
+    - frames (given)
+        - cam00/images
+            - 0.png
+            - 1.png
+            ...
+        - cam11/images
+            - 0.png
+            - 1.png
+            ...
+        ...
+    - frames{downsample_factor} (output)
+        - cam00/images
+            - 0000.png
+            - 0001.png
+            ...
+        - cam11/images
+            - 0000.jpg
+            - 0001.jpg
+            ...
+    """
+    image_dir_paths = glob.glob(root_folder + '/frames/*')
+    for idx, image_dir in enumerate(sorted(image_dir_paths)):
+        new_img_dir = image_dir.replace("frames", f"frames{DOWNSAMPLES}")
+        new_img_dir = "/".join(new_img_dir.split('/')[:-1]) + '/images' + os.path.basename(image_dir).zfill(3)
+        os.makedirs(new_img_dir, exist_ok=True)
+        imgs = sorted(glob.glob(image_dir + '/*'))
+        for img_path in imgs:
+            frame = cv2.imread(img_path)
+            if DOWNSAMPLES != 1:
+                frame = cv2.resize(frame, dsize=None, fx=1/DOWNSAMPLES, fy=1/DOWNSAMPLES)
+            ext = '.png' if idx == 0 else '.jpg'
+            new_basename = f"{os.path.basename(img_path).split('.')[0].zfill(3)}{ext}"
+            new_img_path = os.path.join(new_img_dir, new_basename)
+            cv2.imwrite(new_img_path, frame)
+        print(f"[INFO] {image_dir} > {new_img_dir} Done!")
+
 if __name__ == "__main__":
 
     # n3dv_root = 'N3DV'
@@ -124,7 +164,12 @@ if __name__ == "__main__":
     #     process_videos(os.path.join(n3dv_root, video_name))
     #     print("Done : ", video_name)
 
-    stnerf_root = 'samsung2024'
-    for video_name in ['walking', 'taekwondo']:
-        process_frames(os.path.join(stnerf_root, video_name))
-        print("Done : ",video_name)
+    # stnerf_root = '/workspace/dataset/samsung2024'
+    # for video_name in ['walking', 'taekwondo']:
+    #     process_frames(os.path.join(stnerf_root, video_name))
+    #     print("Done : ",video_name)
+
+    root = '/workspace/dataset/samsung2024'
+    for video_name in ['robot_synthetic']:
+        process_frames(os.path.join(root, video_name))
+        print("Done : ", video_name)

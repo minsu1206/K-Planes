@@ -322,10 +322,28 @@ def generate_arc_orbit(poses: np.ndarray,
             end = offset * np.pi
 
         for theta in np.linspace(start, end, n_frames_cycle, endpoint=False):
-            t = radii * torch.tensor([cos_phi * np.cos(theta), sin_phi, cos_phi * np.sin(theta), 1.])
+            # default ------------------------------------------------------- #
+            # too far ; need to look down
+            # t = radii * torch.tensor([cos_phi * np.cos(theta), sin_phi, cos_phi * np.sin(theta), 1.])
+            # t = t.numpy()
+            # position = c2w @ t
+            # lookat = c2w @ np.array([0, 0, -focal, 1.0])    # TODO : how to rotate camera view ?
+            # z_axis = normalize(position - lookat)
+            # render_poses.append(viewmatrix(z_axis, up, position))
+            # 1107 ---------------------------------------------------------- # 
+            # t = radii * torch.tensor([cos_phi * np.cos(theta), sin_phi, 0.5 * cos_phi * np.sin(theta), 1.]) # decrease z-direction movement
+            # t = t.numpy()
+            # position = c2w @ t
+            # lookat = c2w @ trans_t(-focal).numpy() @ rot_phi(-1/8 * np.pi).numpy() # look little down but still maintain translation
+            # lookat = lookat[:, -1]
+            # z_axis = normalize(position - lookat)
+            # render_poses.append(viewmatrix(z_axis, up, position))
+            # 1111 ---------------------------------------------------------- # 
+            t = radii * torch.tensor([cos_phi * np.cos(theta), sin_phi, 0.5 * cos_phi * np.sin(theta), 1.]) # decrease z-direction movement
             t = t.numpy()
             position = c2w @ t
-            lookat = c2w @ np.array([0, 0, -focal, 1.0])    # TODO : how to rotate camera view ?
+            lookat = c2w @ trans_t(-np.min(near_fars)).numpy() @ rot_phi(-1/8 * np.pi).numpy() # locate look at near to origin ?
+            lookat = lookat[:, -1]
             z_axis = normalize(position - lookat)
             render_poses.append(viewmatrix(z_axis, up, position))
     return np.stack(render_poses, axis=0)

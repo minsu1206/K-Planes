@@ -1,5 +1,5 @@
 #!/bin/bash
 
 # training
-PYTHONPATH='.' python plenoxels/main.py --device 0 --config-path plenoxels/configs/final/samsung2024/n3dv_hybrid.py data_downsample=4 pose_npy_suffix=align_k expname=cut_roasted_beef_align_k
-PYTHONPATH='.' python plenoxels/main.py --device 0 --config-path plenoxels/configs/final/samsung2024/n3dv_hybrid.py data_downsample=4 pose_npy_suffix=align expname=cut_roasted_beef_align
+CUDA_VISIBLE_DEVICES=1 PYTHONPATH='.' python plenoxels/main.py --device 0 --config-path plenoxels/configs/final/samsung2024/synthetic_hybrid.py data_downsample=2 pose_npy_suffix=made use_intrinsic=True expname=robot_synthetic_ndc_made
+CUDA_VISIBLE_DEVICES=1 PYTHONPATH='.' python plenoxels/main.py --device 0 --config-path plenoxels/configs/final/samsung2024/synthetic_hybrid2.py data_downsample=2 pose_npy_suffix=made use_intrinsic=True expname=robot_synthetic_contract_made
