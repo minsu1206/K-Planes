@@ -292,7 +292,7 @@ def generate_arc_orbit(poses: np.ndarray,
     Based on https://github.com/google-research/google-research/blob/342bfc150ef1155c5254c1e6bd0c912893273e8d/regnerf/internal/datasets.py
     """
     c2w = average_poses(poses)  # [3, 4]
-    print(f"[DEBUG] : c2w trans : {c2w[:, -1]}")
+    print(f"[DEBUG] : c2w : {c2w}")
     up = normalize(poses[:, :3, 1].sum(0))
 
     close_depth, inf_depth = np.min(near_fars) * 1.0, np.max(near_fars) * 5.0
@@ -322,40 +322,12 @@ def generate_arc_orbit(poses: np.ndarray,
             end = offset * np.pi
 
         for theta in np.linspace(start, end, n_frames_cycle, endpoint=False):
-            # t = radii * torch.tensor([cos_phi * np.cos(theta), - cos_phi * np.sin(theta), sin_phi, 1.]) # ver5 ; 밑으로 arc. 
-            t = radii * torch.tensor([cos_phi * np.cos(theta), sin_phi, cos_phi * np.sin(theta), 1.]) # ver7
+            t = radii * torch.tensor([cos_phi * np.cos(theta), sin_phi, cos_phi * np.sin(theta), 1.])
             t = t.numpy()
             position = c2w @ t
-            # lookat = c2w @ np.array([0, 0, -focal, 1.0])
-            # z_axis = normalize(position - lookat)
-
-            # lookat = c2w @ rot_phi(-2/6 * np.pi).numpy() @ np.array([0, 0, -focal, 1.0]) # ver13
-            lookat = c2w @ rot_phi(-1/6 * np.pi).numpy()
-            lookat = lookat[:, -1]
-            print(f"[DEBUG] : lookat : {lookat}")
+            lookat = c2w @ np.array([0, 0, -focal, 1.0])    # TODO : how to rotate camera view ?
             z_axis = normalize(position - lookat)
-
-            # ver8
-            # spherical = generate_spherical_poses(theta=theta, phi=0, radius=radii).numpy()
-            # lookat = c2w @ np.array([0, 0, -focal, 1.0])
-            # position = c2w @ spherical
-            # position = position[:, -1]
-            # print("shape check : ", spherical.shape, position.shape, lookat.shape)
-            # z_axis = normalize(position - lookat)
-
-            # # ver9
-            # t = radii * torch.tensor([cos_phi * np.cos(theta), sin_phi, cos_phi * np.sin(theta), 1.])
-            # t = t.numpy()
-            # # position = c2w @ rot_theta(theta).numpy() @ t
-            # position = rot_theta(theta).numpy() @ t # ver10
-            # position = position[:-1]
-            # # lookat = c2w @ np.array([0, 0, -focal, 1.0])
-            # # lookat = c2w[:, -1] # ver11
-            # lookat = c2w @ np.array([0, 0, -radii, 1.0])
-            # z_axis = normalize(position - lookat)
             render_poses.append(viewmatrix(z_axis, up, position))
-            # render_poses.append(viewmatrix(normalize(position), up, position))
-            # render_poses.append(viewmatrix(z_axis, up, z_axis))
     return np.stack(render_poses, axis=0)
 
 trans_t = lambda t: torch.Tensor([
