@@ -44,7 +44,8 @@ class Video360Dataset(BaseDataset):
                  ndc_far: float = 2.6,
                  ndc_near: float = 1.0, 
                  use_intrinsic: bool = False,
-                 pose_npy_suffix: str = ''
+                 pose_npy_suffix: str = '',
+                 selection:list=None,
                  ):
         self.keyframes = keyframes
         self.max_cameras = max_cameras
@@ -73,7 +74,7 @@ class Video360Dataset(BaseDataset):
                 assert ndc, "Unable to generate render poses without ndc: don't know near-far."
                 per_cam_poses, per_cam_near_fars, intrinsics, _ = load_llffvideo_poses(
                     datadir, downsample=self.downsample, split='all', near_scaling=self.near_scaling,
-                    pose_npy_suffix=pose_npy_suffix)
+                    pose_npy_suffix=pose_npy_suffix, selection=selection)
                 if "arc" in split:
                     print("[INFO] : video_datasets.py / Video360Dataset : load arc-shaped camera path")
                     render_poses = generate_arc_orbit(
@@ -90,7 +91,7 @@ class Video360Dataset(BaseDataset):
             else:
                 per_cam_poses, per_cam_near_fars, intrinsics, videopaths = load_llffvideo_poses(
                     datadir, downsample=self.downsample, split=split, near_scaling=self.near_scaling,
-                    pose_npy_suffix=pose_npy_suffix)
+                    pose_npy_suffix=pose_npy_suffix, selection=selection)
                 if split == 'test':
                     keyframes = False
                 poses, imgs, timestamps, self.median_imgs = load_llffvideo_data(
@@ -419,7 +420,8 @@ def load_llffvideo_poses(datadir: str,
                          downsample: float,
                          split: str,
                          near_scaling: float,
-                         pose_npy_suffix:str='' # 0131
+                         pose_npy_suffix:str='', # 0131
+                         selection:list=None,
                          ) -> Tuple[torch.Tensor, torch.Tensor, Intrinsics, List[str]]:
     """Load poses and metadata for LLFF video.
 
@@ -450,12 +452,24 @@ def load_llffvideo_poses(datadir: str,
     videopaths.sort()
 
     # The first camera is reserved for testing, following https://github.com/facebookresearch/Neural_3D_Video/releases/tag/v1.0
-    if split == 'train':
-        split_ids = np.arange(1, poses.shape[0])
-    elif split == 'test':
-        split_ids = np.array([0])
+    if selection is None:
+        if split == 'train':
+            split_ids = np.arange(1, poses.shape[0])
+        elif split == 'test':
+            split_ids = np.array([0])   # TODO: give this value as argument, not hardcoded
+        else:
+            split_ids = np.arange(poses.shape[0])
     else:
-        split_ids = np.arange(poses.shape[0])
+        if split == 'train':
+            if selection[0] == None:
+                split_ids = np.arange(1, poses.shape[0])
+            else:
+                split_ids = np.array(selection[0])
+        elif split == 'test':
+            split_ids = np.array(selection[1])
+        else:
+            split_ids = np.arange(poses.shape[0])
+        
     if 'coffee_martini' in datadir:
         # https://github.com/fengres/mixvoxels/blob/0013e4ad63c80e5f14eb70383e2b073052d07fba/dataLoader/llff_video.py#L323
         log.info(f"Deleting unsynchronized camera from coffee-martini video.")

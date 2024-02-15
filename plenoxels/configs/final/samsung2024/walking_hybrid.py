@@ -19,7 +19,8 @@ config = {
  # 0131
  'use_intrinsic': False,
  'pose_npy_suffix': 'scnerf',
-
+ # 0215
+ 'selection':None,
  # Optimization settings
  'num_steps': 90001,
  'batch_size': 4096,
