@@ -204,7 +204,8 @@ def init_tr_data(data_downsample, data_dir, **kwargs):
         use_intrinsic=kwargs.get('use_intrinsic', False),
         pose_npy_suffix=kwargs.get('pose_npy_suffix', ''),
         ndc_near=float(kwargs.get('ndc_near', 1.0)),
-        selection=kwargs.get('selection', None)
+        selection=kwargs.get('selection', None),
+        pose_selection=kwargs.get('pose_selection', None)
     )
     if ist:
         tr_dset.switch_isg2ist()  # this should only happen in case we're reloading
@@ -229,7 +230,8 @@ def init_ts_data(data_dir, split, data_downsample=2, **kwargs):
         use_intrinsic=kwargs.get('use_intrinsic', False),
         pose_npy_suffix=kwargs.get('pose_npy_suffix', ''),
         ndc_near=float(kwargs.get('ndc_near', 1.0)),
-        selection=kwargs.get('selection', None)
+        selection=kwargs.get('selection', None),
+        pose_selection=kwargs.get('pose_selection', None)
     )
     return {"ts_dset": ts_dset}
 

@@ -20,7 +20,7 @@ from .ray_utils import (
 from .synthetic_nerf_dataset import (
     load_360_images, load_360_intrinsics,
 )
-
+import ast
 
 class Video360Dataset(BaseDataset):
     len_time: int
@@ -46,6 +46,7 @@ class Video360Dataset(BaseDataset):
                  use_intrinsic: bool = False,
                  pose_npy_suffix: str = '',
                  selection:list=None,
+                 pose_selection:list=None
                  ):
         self.keyframes = keyframes
         self.max_cameras = max_cameras
@@ -68,13 +69,18 @@ class Video360Dataset(BaseDataset):
         else:
             dset_type = "llff"
 
+        if isinstance(selection, str):
+            selection = ast.literal_eval(selection)
+        if isinstance(pose_selection, str):
+            pose_selection = ast.literal_eval(pose_selection)
+
         # Note: timestamps are stored normalized between -1, 1.
         if dset_type == "llff":
             if split == "render" or split == "render_arc":
                 assert ndc, "Unable to generate render poses without ndc: don't know near-far."
                 per_cam_poses, per_cam_near_fars, intrinsics, _ = load_llffvideo_poses(
                     datadir, downsample=self.downsample, split='all', near_scaling=self.near_scaling,
-                    pose_npy_suffix=pose_npy_suffix, selection=selection)
+                    pose_npy_suffix=pose_npy_suffix, selection=selection, pose_selection=pose_selection)
                 if "arc" in split:
                     print("[INFO] : video_datasets.py / Video360Dataset : load arc-shaped camera path")
                     render_poses = generate_arc_orbit(
@@ -91,7 +97,7 @@ class Video360Dataset(BaseDataset):
             else:
                 per_cam_poses, per_cam_near_fars, intrinsics, videopaths = load_llffvideo_poses(
                     datadir, downsample=self.downsample, split=split, near_scaling=self.near_scaling,
-                    pose_npy_suffix=pose_npy_suffix, selection=selection)
+                    pose_npy_suffix=pose_npy_suffix, selection=selection, pose_selection=pose_selection)
                 if split == 'test':
                     keyframes = False
                 poses, imgs, timestamps, self.median_imgs = load_llffvideo_data(
@@ -187,8 +193,9 @@ class Video360Dataset(BaseDataset):
         self.isg_weights = None
         self.ist_weights = None
         if split == "train" and dset_type == 'llff':  # Only use importance sampling with DyNeRF videos
-            if os.path.exists(os.path.join(datadir, f"isg_weights.pt")):
-                self.isg_weights = torch.load(os.path.join(datadir, f"isg_weights.pt"))
+            isg_weight_name = f"isg_weights_{selection}.pt" if selection is not None else "isg_weights.pt"
+            if os.path.exists(os.path.join(datadir, isg_weight_name)):
+                self.isg_weights = torch.load(os.path.join(datadir, isg_weight_name))
                 log.info(f"Reloaded {self.isg_weights.shape[0]} ISG weights from file.")
             else:
                 # Precompute ISG weights
@@ -199,12 +206,13 @@ class Video360Dataset(BaseDataset):
                     median_imgs=self.median_imgs, gamma=gamma)
                 # Normalize into a probability distribution, to speed up sampling
                 self.isg_weights = (self.isg_weights.reshape(-1) / torch.sum(self.isg_weights))
-                torch.save(self.isg_weights, os.path.join(datadir, f"isg_weights.pt"))
+                torch.save(self.isg_weights, os.path.join(datadir, isg_weight_name))
                 t_e = time.time()
                 log.info(f"Computed {self.isg_weights.shape[0]} ISG weights in {t_e - t_s:.2f}s.")
 
-            if os.path.exists(os.path.join(datadir, f"ist_weights.pt")):
-                self.ist_weights = torch.load(os.path.join(datadir, f"ist_weights.pt"))
+            ist_weight_name = f"ist_weights_{selection}.pt" if selection is not None else "ist_weights.pt"
+            if os.path.exists(os.path.join(datadir, ist_weight_name)):
+                self.ist_weights = torch.load(os.path.join(datadir, ist_weight_name))
                 log.info(f"Reloaded {self.ist_weights.shape[0]} IST weights from file.")
             else:
                 # Precompute IST weights
@@ -214,7 +222,7 @@ class Video360Dataset(BaseDataset):
                     num_cameras=self.median_imgs.shape[0])
                 # Normalize into a probability distribution, to speed up sampling
                 self.ist_weights = (self.ist_weights.reshape(-1) / torch.sum(self.ist_weights))
-                torch.save(self.ist_weights, os.path.join(datadir, f"ist_weights.pt"))
+                torch.save(self.ist_weights, os.path.join(datadir, ist_weight_name))
                 t_e = time.time()
                 log.info(f"Computed {self.ist_weights.shape[0]} IST weights in {t_e - t_s:.2f}s.")
 
@@ -422,6 +430,7 @@ def load_llffvideo_poses(datadir: str,
                          near_scaling: float,
                          pose_npy_suffix:str='', # 0131
                          selection:list=None,
+                         pose_selection:list=None
                          ) -> Tuple[torch.Tensor, torch.Tensor, Intrinsics, List[str]]:
     """Load poses and metadata for LLFF video.
 
@@ -446,9 +455,10 @@ def load_llffvideo_poses(datadir: str,
         print(f"[INFO] : video_datasets.py / load_llff_poses : set video/image path")
         print(" "*10, os.path.join(datadir, f"frames{int(downsample)}"))
         videopaths = np.array(glob.glob(os.path.join(datadir, f"frames{int(downsample)}/*")))
-        
-    assert poses.shape[0] == len(videopaths), \
-        f'Mismatch between number of cameras and number of poses! : {poses.shape[0]} != {len(videopaths)}'
+    
+    if pose_selection is None:
+        assert poses.shape[0] == len(videopaths), \
+            f'Mismatch between number of cameras and number of poses! : {poses.shape[0]} != {len(videopaths)}'
     videopaths.sort()
 
     # The first camera is reserved for testing, following https://github.com/facebookresearch/Neural_3D_Video/releases/tag/v1.0
@@ -469,13 +479,25 @@ def load_llffvideo_poses(datadir: str,
             split_ids = np.array(selection[1])
         else:
             split_ids = np.arange(poses.shape[0])
-        
+    print('selection : ', selection, 'pose_selection', pose_selection)
+    print('split_ids : ', split_ids)
+    if pose_selection is None:
+        pose_split_ids = split_ids
+    else:
+        if split == 'train':
+            pose_split_ids = np.array(pose_selection[0])
+        elif split == 'test':
+            pose_split_ids = np.array(pose_selection[1])
+        else:
+            pose_split_ids = split_ids # ??
+    print('pose_split_ids : ', pose_split_ids)
+
     if 'coffee_martini' in datadir:
         # https://github.com/fengres/mixvoxels/blob/0013e4ad63c80e5f14eb70383e2b073052d07fba/dataLoader/llff_video.py#L323
         log.info(f"Deleting unsynchronized camera from coffee-martini video.")
         split_ids = np.setdiff1d(split_ids, 12)
-    poses = torch.from_numpy(poses[split_ids])
-    near_fars = torch.from_numpy(near_fars[split_ids])
+    poses = torch.from_numpy(poses[pose_split_ids])
+    near_fars = torch.from_numpy(near_fars[pose_split_ids])
     videopaths = videopaths[split_ids].tolist()
 
     return poses, near_fars, intrinsics, videopaths

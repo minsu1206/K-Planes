@@ -21,6 +21,7 @@ config = {
  'pose_npy_suffix': 'scnerf',
  # 0215
  'selection':None,
+ 'pose_selection':None,
  # Optimization settings
  'num_steps': 90001,
  'batch_size': 4096,

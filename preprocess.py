@@ -144,9 +144,9 @@ def process_frames2(root_folder):
     image_dir_paths = glob.glob(root_folder + '/frames/*')
     for idx, image_dir in enumerate(sorted(image_dir_paths)):
         new_img_dir = image_dir.replace("frames", f"frames{DOWNSAMPLES}")
-        new_img_dir = "/".join(new_img_dir.split('/')[:-1]) + '/images' + os.path.basename(image_dir).zfill(3)
+        new_img_dir = "/".join(new_img_dir.split('/')[:-1]) + '/' + os.path.basename(image_dir).zfill(3)
         os.makedirs(new_img_dir, exist_ok=True)
-        imgs = sorted(glob.glob(image_dir + '/*'))
+        imgs = sorted(glob.glob(image_dir + '/images/*'))
         for img_path in imgs:
             frame = cv2.imread(img_path)
             if DOWNSAMPLES != 1:
@@ -170,6 +170,6 @@ if __name__ == "__main__":
     #     print("Done : ",video_name)
 
     root = '/workspace/dataset/samsung2024'
-    for video_name in ['robot_synthetic']:
-        process_frames(os.path.join(root, video_name))
+    for video_name in ['room1', 'room2', 'room3', 'room4']:
+        process_frames2(os.path.join(root, video_name))
         print("Done : ", video_name)
