@@ -79,6 +79,8 @@ class Video360Dataset(BaseDataset):
             cam_scale = float(cam_scale)
         if isinstance(bbox_mult, str):
             bbox_mult = ast.literal_eval(bbox_mult)
+            bbox_mult = np.array(bbox_mult)
+            
         # Note: timestamps are stored normalized between -1, 1.
         if dset_type == "llff":
             if split == "render" or split == "render_arc":
