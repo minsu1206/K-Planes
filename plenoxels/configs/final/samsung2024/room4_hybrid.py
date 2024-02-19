@@ -23,6 +23,7 @@ config = {
  'selection':None,
  'pose_selection':None,
  'cam_scale':None,
+ 'bbox_mult':None,
  # Optimization settings
  'num_steps': 90001,
  'batch_size': 4096,

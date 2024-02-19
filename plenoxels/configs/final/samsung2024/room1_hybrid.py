@@ -23,6 +23,7 @@ config = {
  'selection':None,
  'pose_selection':None,
  'cam_scale':None,
+ 'bbox_mult':None,
  # Optimization settings
  'num_steps': 90001,
  'batch_size': 4096,
@@ -42,7 +43,7 @@ config = {
 
  # Training settings
  'save_every': 30000,
- 'valid_every': 30000,
+ 'valid_every': 10000,
  'save_outputs': True,
  'train_fp16': True,
 

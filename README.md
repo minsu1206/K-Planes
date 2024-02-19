@@ -50,3 +50,86 @@ The `main.py` script also supports rendering a novel camera trajectory, evaluati
 Note: Joint first-authorship is not fully supported in BibTex; you may need to modify the above depending on your format.
 
 This work is made available under the BSD 3-clause license. Click [here](LICENSE) to view a copy of the license.
+
+---
+
+# CUSTOMIZED
+
+### Setup 
+1. `docker pull ciplab/minsu_torch:kplanes`
+   
+   be sure that gpu is 2080Ti / 3090 / A5000 / A6000 / A100 (Titan RTX not 
+   tested for TinyCUDANN)
+
+2. git clone repository
+   `git clone https://github.com/minsu1206/K-Planes.git`
+
+
+2. dataset prepare
+
+   : `cp -r /media/NAS2/CIPLAB/nerf_team/room1_processed dataset/samsung2024`
+
+3. overview ...
+
+   ```
+   dataset
+   - room1
+      - frames{downsample_factor}
+         -cam00
+         -cam01
+         ...
+         -cam15
+         poses_bounds_${tag1}.npy
+         intrinsic_${tag1}.npy
+   - room2
+      - frames{downsample_factor}
+         -cam00
+         -cam01
+         ...
+   K-planes
+      plenoxels
+      logs
+      full_example.sh
+      full1.sh
+      full2.sh
+      ...
+   ```
+
+### Train
+
+See `full_example.sh.`
+
+This includes
+- train
+- evaluate
+- render (spiral / arc)
+- visualization of spacetime
+
+How to do ablation study ?
+
+K-planes code support configuration overriding. <br>
+Add $hyperparams=$value at last. <br>
+Note that this value is basically string type.
+Another notes:
+1. To utilize customized poses_bounds.npy, name this file as "poses_bounds_{$tag}.npy"
+   then, override pose_npy_suffix=$tag when you run training code.
+   if pose_npy_suffix='', it uses "poses_bounds.npy" automatically.
+
+2. To utilize intrinsic_pose, use_intrinsic=True
+   please note that if pose_npy_suffix != '', it uses "intrinsic_{$pose_suffix_npy}.npy" for training
+
+
+### Render_arc
+
+see `render_arc.sh`
+
+This script is the example of how to render images along arc path. <br>
+Be sure that the path of trained model is correct. <br>
+Checkpoint path is `os.path.join(args.log_dir, "model.pth")`
+
+### Some utilities
+1. cropping result video into 3 videos. 
+   
+   : python cropvideo.py $PATH or bash cropvideo.sh $PATH
+
+2. ...

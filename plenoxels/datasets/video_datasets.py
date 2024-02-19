@@ -47,7 +47,8 @@ class Video360Dataset(BaseDataset):
                  pose_npy_suffix: str = '',
                  selection:list=None,
                  pose_selection:list=None,
-                 cam_scale:float=None
+                 cam_scale:float=None,
+                 bbox_mult:list=None
                  ):
         self.keyframes = keyframes
         self.max_cameras = max_cameras
@@ -76,7 +77,8 @@ class Video360Dataset(BaseDataset):
             pose_selection = ast.literal_eval(pose_selection)
         if isinstance(cam_scale, str):
             cam_scale = float(cam_scale)
-
+        if isinstance(bbox_mult, str):
+            bbox_mult = ast.literal_eval(bbox_mult)
         # Note: timestamps are stored normalized between -1, 1.
         if dset_type == "llff":
             if split == "render" or split == "render_arc":
@@ -178,6 +180,10 @@ class Video360Dataset(BaseDataset):
             scene_bbox = torch.tensor(scene_bbox)
         else:
             scene_bbox = get_bbox(datadir, is_contracted=contraction, dset_type=dset_type)
+        
+        if bbox_mult is not None:
+            scene_bbox *= torch.from_numpy(bbox_mult)
+            
         super().__init__(
             datadir=datadir,
             split=split,
