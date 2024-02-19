@@ -46,7 +46,8 @@ class Video360Dataset(BaseDataset):
                  use_intrinsic: bool = False,
                  pose_npy_suffix: str = '',
                  selection:list=None,
-                 pose_selection:list=None
+                 pose_selection:list=None,
+                 cam_scale:float=None
                  ):
         self.keyframes = keyframes
         self.max_cameras = max_cameras
@@ -73,6 +74,8 @@ class Video360Dataset(BaseDataset):
             selection = ast.literal_eval(selection)
         if isinstance(pose_selection, str):
             pose_selection = ast.literal_eval(pose_selection)
+        if isinstance(cam_scale, str):
+            cam_scale = float(cam_scale)
 
         # Note: timestamps are stored normalized between -1, 1.
         if dset_type == "llff":
@@ -80,7 +83,7 @@ class Video360Dataset(BaseDataset):
                 assert ndc, "Unable to generate render poses without ndc: don't know near-far."
                 per_cam_poses, per_cam_near_fars, intrinsics, _ = load_llffvideo_poses(
                     datadir, downsample=self.downsample, split='all', near_scaling=self.near_scaling,
-                    pose_npy_suffix=pose_npy_suffix, selection=selection, pose_selection=pose_selection)
+                    pose_npy_suffix=pose_npy_suffix, selection=selection, pose_selection=pose_selection, cam_scale=cam_scale)
                 if "arc" in split:
                     print("[INFO] : video_datasets.py / Video360Dataset : load arc-shaped camera path")
                     render_poses = generate_arc_orbit(
@@ -97,7 +100,7 @@ class Video360Dataset(BaseDataset):
             else:
                 per_cam_poses, per_cam_near_fars, intrinsics, videopaths = load_llffvideo_poses(
                     datadir, downsample=self.downsample, split=split, near_scaling=self.near_scaling,
-                    pose_npy_suffix=pose_npy_suffix, selection=selection, pose_selection=pose_selection)
+                    pose_npy_suffix=pose_npy_suffix, selection=selection, pose_selection=pose_selection, cam_scale=cam_scale)
                 if split == 'test':
                     keyframes = False
                 poses, imgs, timestamps, self.median_imgs = load_llffvideo_data(
@@ -430,7 +433,8 @@ def load_llffvideo_poses(datadir: str,
                          near_scaling: float,
                          pose_npy_suffix:str='', # 0131
                          selection:list=None,
-                         pose_selection:list=None
+                         pose_selection:list=None,
+                         cam_scale:float=None
                          ) -> Tuple[torch.Tensor, torch.Tensor, Intrinsics, List[str]]:
     """Load poses and metadata for LLFF video.
 
@@ -448,7 +452,8 @@ def load_llffvideo_poses(datadir: str,
     """
     # 0131
     poses, near_fars, intrinsics = load_llff_poses_helper(datadir, downsample, near_scaling,
-                                                            pose_npy_suffix=pose_npy_suffix)
+                                                            pose_npy_suffix=pose_npy_suffix,
+                                                            cam_scale=cam_scale)
 
     videopaths = np.array(glob.glob(os.path.join(datadir, '*.mp4')))  # [n_cameras]
     if len(videopaths) == 0:

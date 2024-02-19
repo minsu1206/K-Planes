@@ -205,7 +205,8 @@ def init_tr_data(data_downsample, data_dir, **kwargs):
         pose_npy_suffix=kwargs.get('pose_npy_suffix', ''),
         ndc_near=float(kwargs.get('ndc_near', 1.0)),
         selection=kwargs.get('selection', None),
-        pose_selection=kwargs.get('pose_selection', None)
+        pose_selection=kwargs.get('pose_selection', None),
+        cam_scale=kwargs.get('cam_scale',None)
     )
     if ist:
         tr_dset.switch_isg2ist()  # this should only happen in case we're reloading
@@ -231,7 +232,8 @@ def init_ts_data(data_dir, split, data_downsample=2, **kwargs):
         pose_npy_suffix=kwargs.get('pose_npy_suffix', ''),
         ndc_near=float(kwargs.get('ndc_near', 1.0)),
         selection=kwargs.get('selection', None),
-        pose_selection=kwargs.get('pose_selection', None)
+        pose_selection=kwargs.get('pose_selection', None),
+        cam_scale=kwargs.get('cam_scale',None)
     )
     return {"ts_dset": ts_dset}
 

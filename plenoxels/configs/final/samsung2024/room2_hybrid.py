@@ -13,7 +13,7 @@ config = {
  'near_scaling': 0.95,
  'isg': False,
  'isg_step': -1,
- 'ist_step': 50000,
+ 'ist_step': 90001,
  'keyframes': False,
  'scene_bbox': [[-3.0, -1.8, -1.2], [3.0, 1.8, 1.2]],
  # 0131
@@ -22,6 +22,7 @@ config = {
  # 0215
  'selection':None,
  'pose_selection':None,
+ 'cam_scale':None,
  # Optimization settings
  'num_steps': 90001,
  'batch_size': 4096,

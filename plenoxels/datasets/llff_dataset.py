@@ -124,7 +124,7 @@ def _split_poses_bounds(poses_bounds: np.ndarray) -> Tuple[np.ndarray, np.ndarra
 
 
 def load_llff_poses_helper(datadir: str, downsample: float, near_scaling: float, 
-                            pose_npy_suffix:str='') -> Tuple[np.ndarray, np.ndarray, Intrinsics]:
+                            pose_npy_suffix:str='', cam_scale:float=None) -> Tuple[np.ndarray, np.ndarray, Intrinsics]:
     suffix = '_' + pose_npy_suffix if pose_npy_suffix != '' else ''
     print(f"[INFO] : llff_dataset.py / load_llff_poses_helper : load camera poses from {os.path.join(datadir, f'poses_bounds{suffix}.npy')}")
     print(f'[INFO] : near_scaling : ', near_scaling)
@@ -147,6 +147,9 @@ def load_llff_poses_helper(datadir: str, downsample: float, near_scaling: float,
     # the nearest depth is at 1/0.75=1.33
     near_fars /= scale_factor
     poses[..., 3] /= scale_factor
+    if cam_scale is not None:
+        print(f"[INFO] : llff_dataset.py / load_llff_pose_helper : forcing cam scaling : x{cam_scale}")
+        poses[..., 3] *= cam_scale
     # print(f'[INFO] : near_fars /= scale_factor :', near_fars, scale_factor) # [nan, inf]
     return poses, near_fars, intrinsics
 
