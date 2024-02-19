@@ -111,7 +111,7 @@ class Video360Dataset(BaseDataset):
                     self.per_cam_near_fars = per_cam_near_fars.float()
                 else:
                     self.per_cam_near_fars = torch.tensor(
-                        [[0.0, self.ndc_far]]).repeat(per_cam_near_fars.shape[0], 1)
+                        [[self.ndc_near, self.ndc_far]]).repeat(per_cam_near_fars.shape[0], 1)
             # These values are tuned for the salmon video
             self.global_translation = torch.tensor([0, 0, 2.])
             self.global_scale = torch.tensor([0.5, 0.6, 1])
@@ -335,7 +335,7 @@ class Video360Dataset(BaseDataset):
             intrinsic_input = self.intrinsics
         camera_dirs = stack_camera_dirs(x, y, intrinsic_input, True)  # [num_rays, 3]
         out['rays_o'], out['rays_d'] = get_rays(
-            camera_dirs, c2w, ndc=self.is_ndc, ndc_near=self.ndc_near, intrinsics=intrinsic_input,
+            camera_dirs, c2w, ndc=self.is_ndc, intrinsics=intrinsic_input,
             normalize_rd=True)                                        # [num_rays, 3]
         # ----------------------------------------------------------------------------- #
 

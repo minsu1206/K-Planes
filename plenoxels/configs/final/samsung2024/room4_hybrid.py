@@ -9,7 +9,7 @@ config = {
  'contract': False,
  'ndc': True,
  'ndc_far': 2.6,
- 'ndc_near': 1.0,
+ 'ndc_near': 0.0,
  'near_scaling': 0.95,
  'isg': False,
  'isg_step': -1,
@@ -42,7 +42,7 @@ config = {
 
  # Training settings
  'save_every': 30000,
- 'valid_every': 30000,
+ 'valid_every': 10000,
  'save_outputs': True,
  'train_fp16': True,
 
