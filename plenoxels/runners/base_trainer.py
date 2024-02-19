@@ -42,6 +42,9 @@ class BaseTrainer(abc.ABC):
         self.valid_every = valid_every
         self.save_outputs = save_outputs
         self.device = device
+        self.early_stop = kwargs.get('early_stop', None)
+        if isinstance(self.early_stop, str):
+            self.early_stop = int(self.early_stop)
         self.eval_batch_size = kwargs.get('eval_batch_size', 8129)
         self.extra_args = kwargs
         self.timer = CudaTimer(enabled=False)
@@ -170,6 +173,10 @@ class BaseTrainer(abc.ABC):
                     r.step(self.global_step)
                 self.post_step(progress_bar=pb)
                 self.timer.check("after-step")
+
+                if self.early_stop is not None:
+                    if self.global_step > self.early_stop:
+                        return
         finally:
             pb.close()
             self.writer.close()
