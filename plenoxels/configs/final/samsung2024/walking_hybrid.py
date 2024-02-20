@@ -5,7 +5,7 @@ config = {
 
  # Run first for 1 step with data_downsample=4 to generate weights for ray importance sampling
  'data_downsample': 1,
- 'data_dirs': ['/workspace/dataset/samsung2024/'],
+ 'data_dirs': ['/workspace/dataset/samsung2024/walking'],
  'contract': False,
  'ndc': True,
  'ndc_far': 2.6,
@@ -22,6 +22,9 @@ config = {
  # 0215
  'selection':None,
  'pose_selection':None,
+ 'cam_scale':None,
+ 'bbox_mult':None,
+ 'early_stop':10001,
  # Optimization settings
  'num_steps': 90001,
  'batch_size': 4096,
@@ -40,8 +43,8 @@ config = {
  'time_smoothness_weight_proposal_net': 1e-05,
 
  # Training settings
- 'save_every': 30000,
- 'valid_every': 30000,
+ 'save_every': 10000,
+ 'valid_every': 10000,
  'save_outputs': True,
  'train_fp16': True,
 

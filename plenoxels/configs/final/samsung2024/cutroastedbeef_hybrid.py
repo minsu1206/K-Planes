@@ -1,11 +1,11 @@
 config = {
- 'expname': 'taekwondo',
+ 'expname': 'cut_roasted_beef',
  'logdir': './logs/baseline',
  'device': 'cuda:0',
 
  # Run first for 1 step with data_downsample=4 to generate weights for ray importance sampling
  'data_downsample': 1,
- 'data_dirs': ['/workspace/dataset/samsung2024/taekwondo'],
+ 'data_dirs': ['/workspace/dataset/samsung2024/cut_roasted_beef_rightview'],
  'contract': False,
  'ndc': True,
  'ndc_far': 2.6,
@@ -22,9 +22,6 @@ config = {
  # 0215
  'selection':None,
  'pose_selection':None,
- 'cam_scale':None,
- 'bbox_mult':None,
- 'early_stop':None,
  # Optimization settings
  'num_steps': 90001,
  'batch_size': 4096,

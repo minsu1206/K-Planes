@@ -118,6 +118,8 @@ Another notes:
 2. To utilize intrinsic_pose, use_intrinsic=True
    please note that if pose_npy_suffix != '', it uses "intrinsic_{$pose_suffix_npy}.npy" for training
 
+3. To utilize visualizing per @ step (for example, @=300)
+   add vis_every=300 at your training command
 
 ### Render_arc
 
