@@ -1,11 +1,11 @@
 config = {
- 'expname': 'taekwondo',
+ 'expname': 'sear_steak',
  'logdir': './logs/baseline',
  'device': 'cuda:0',
 
  # Run first for 1 step with data_downsample=4 to generate weights for ray importance sampling
  'data_downsample': 1,
- 'data_dirs': ['/workspace/dataset/samsung2024/'],
+ 'data_dirs': ['/workspace/dataset/samsung2024/sear_steak'],
  'contract': False,
  'ndc': True,
  'ndc_far': 2.6,
