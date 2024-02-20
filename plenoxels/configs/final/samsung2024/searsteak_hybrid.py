@@ -43,13 +43,8 @@ config = {
  'time_smoothness_weight_proposal_net': 1e-05,
 
  # Training settings
-<<<<<<< HEAD
  'save_every': 10000,
  'valid_every': 10000,
-=======
- 'save_every': 30000,
- 'valid_every': 30000,
->>>>>>> b5b21399132564e4f9c98e31c15f877e29bda600
  'save_outputs': True,
  'train_fp16': True,
 
