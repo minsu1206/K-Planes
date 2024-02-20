@@ -2,8 +2,8 @@ import logging as log
 import math
 import os
 from collections import defaultdict
-from typing import Dict, MutableMapping, Union, Any, List
-
+from typing import Iterable, Optional, Union, Dict, Tuple, Sequence, MutableMapping, Any, List
+import numpy as np
 import pandas as pd
 import torch
 import torch.utils.data
@@ -12,7 +12,7 @@ from plenoxels.datasets.video_datasets import Video360Dataset
 from plenoxels.utils.ema import EMA
 from plenoxels.utils.my_tqdm import tqdm
 from plenoxels.ops.image import metrics
-from plenoxels.ops.image.io import write_video_to_file
+from plenoxels.ops.image.io import write_video_to_file, write_png
 from plenoxels.models.lowrank_model import LowrankModel
 from .base_trainer import BaseTrainer, init_dloader_random, initialize_model
 from .regularization import (
@@ -150,6 +150,55 @@ class VideoTrainer(BaseTrainer):
         df = pd.DataFrame.from_records(val_metrics)
         df.to_csv(os.path.join(self.log_dir, f"test_metrics_step{self.global_step}.csv"))
 
+    @torch.no_grad()
+    def visualize(self, vis_idx:list=None):
+        dataset = self.test_dataset
+        vis_dir = os.path.join(self.log_dir, 'visualize')
+        os.makedirs(vis_dir, exist_ok=True)
+        if vis_idx is None:
+            vis_idx = [0, 99, 199, 299, 399]
+        if isinstance(dataset.img_h, int):
+            img_h, img_w = dataset.img_h, dataset.img_w
+        else:
+            img_h, img_w = dataset.img_h[img_idx], dataset.img_w[img_idx]
+        print(f"[INFO] : VideoTrainer : {self.global_step:05d} step - visualizing test view frames")
+        for img_idx, data in enumerate(dataset):
+            if img_idx not in vis_idx: 
+                continue
+            else:
+                preds = self.eval_step(data)
+                preds_rgb = (
+                    preds["rgb"]
+                    .reshape(img_h, img_w, 3)
+                    .cpu()
+                    .clamp(0, 1)
+                )
+                if not torch.isfinite(preds_rgb).all():
+                    log.warning(f"Predictions have {torch.isnan(preds_rgb).sum()} NaNs, "
+                                f"{torch.isinf(preds_rgb).sum()} infs.")
+                    preds_rgb = torch.nan_to_num(preds_rgb, nan=0.0)
+                out_img = preds_rgb
+
+                out_depth = None
+                if "depth" in preds:
+                    out_depth = preds["depth"].cpu().reshape(img_h, img_w)[..., None]
+                preds.pop("depth") 
+
+                gt = data["imgs"]
+                gt = gt.reshape(img_h, img_w, -1).cpu()
+                if gt.shape[-1] == 4:
+                    gt = gt[..., :3] * gt[..., 3:] + (1.0 - gt[..., 3:])
+                out_img = torch.cat((out_img, gt), dim=0)
+
+                out_img_np: np.ndarray = (out_img * 255.0).byte().numpy()
+                out_depth_np: Optional[np.ndarray] = None
+                if out_depth is not None:
+                    out_depth = self._normalize_01(out_depth)
+                    out_depth_np = (out_depth * 255.0).repeat(1, 1, 3).byte().numpy()
+                write_png(os.path.join(vis_dir, f"{self.global_step}-{img_idx:03d}.jpg"), out_img_np)
+                if out_depth is not None:
+                    write_png(os.path.join(vis_dir, f"{self.global_step}-depth-{img_idx:03d}.jpg"), out_depth_np)
+                
     def get_save_dict(self):
         base_save_dict = super().get_save_dict()
         return base_save_dict

@@ -1,5 +1,5 @@
 config = {
- 'expname': 'cut_roasted_beef',
+ 'expname': 'sear_steak',
  'logdir': './logs/baseline',
  'device': 'cuda:0',
 
@@ -18,7 +18,7 @@ config = {
  'scene_bbox': [[-3.0, -1.8, -1.2], [3.0, 1.8, 1.2]],
  # 0131
  'use_intrinsic': False,
- 'pose_npy_suffix': 'scnerf',
+ 'pose_npy_suffix': '',
  # 0215
  'selection':None,
  'pose_selection':None,
@@ -43,8 +43,13 @@ config = {
  'time_smoothness_weight_proposal_net': 1e-05,
 
  # Training settings
+<<<<<<< HEAD
  'save_every': 10000,
  'valid_every': 10000,
+=======
+ 'save_every': 30000,
+ 'valid_every': 30000,
+>>>>>>> b5b21399132564e4f9c98e31c15f877e29bda600
  'save_outputs': True,
  'train_fp16': True,
 

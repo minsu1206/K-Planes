@@ -43,8 +43,11 @@ class BaseTrainer(abc.ABC):
         self.save_outputs = save_outputs
         self.device = device
         self.early_stop = kwargs.get('early_stop', None)
+        # CUSTOM ------------------------------------------------- #
         if isinstance(self.early_stop, str):
             self.early_stop = int(self.early_stop)
+        self.vis_every = int(kwargs.get('vis_every', 99999))
+        # --------------------------------------------------------- #
         self.eval_batch_size = kwargs.get('eval_batch_size', 8129)
         self.extra_args = kwargs
         self.timer = CudaTimer(enabled=False)
@@ -132,6 +135,9 @@ class BaseTrainer(abc.ABC):
         if self.save_every > -1 and self.global_step % self.save_every == 0:
             print()
             self.save_model()
+        if self.save_every > -1 and self.global_step % self.vis_every == 0:
+            print()
+            self.visualize()
 
     def pre_epoch(self):
         self.loss_info = self.init_epoch_info()
@@ -287,6 +293,10 @@ class BaseTrainer(abc.ABC):
 
     @abc.abstractmethod
     def validate(self):
+        pass
+    
+    @abc.abstractmethod
+    def visualize(self):
         pass
 
     def report_test_metrics(self, scene_metrics: Dict[str, Sequence[float]], extra_name: Optional[str]):

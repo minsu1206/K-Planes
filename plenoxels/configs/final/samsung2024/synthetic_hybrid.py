@@ -18,10 +18,14 @@ config = {
  'scene_bbox': [[-3.0, -1.8, -1.2], [3.0, 1.8, 1.2]],
  # 0131
  'use_intrinsic': False,
- 'pose_npy_suffix': 'scnerf',
+ 'pose_npy_suffix': '',
  # 0215
  'selection':None,
  'pose_selection':None,
+ 'cam_scale':None,
+ 'bbox_mult':None,
+ 'early_stop':None,
+ 'vis_every':99999,
  # Optimization settings
  'num_steps': 90001,
  'batch_size': 4096,

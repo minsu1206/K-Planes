@@ -201,44 +201,44 @@ class Video360Dataset(BaseDataset):
             weights_subsampled=weights_subsampled,
         )
 
-        self.isg_weights = None
-        self.ist_weights = None
-        if split == "train" and dset_type == 'llff':  # Only use importance sampling with DyNeRF videos
-            isg_weight_name = f"isg_weights_{selection}.pt" if selection is not None else "isg_weights.pt"
-            if os.path.exists(os.path.join(datadir, isg_weight_name)):
-                self.isg_weights = torch.load(os.path.join(datadir, isg_weight_name))
-                log.info(f"Reloaded {self.isg_weights.shape[0]} ISG weights from file.")
-            else:
-                # Precompute ISG weights
-                t_s = time.time()
-                gamma = 1e-3 if self.keyframes else 2e-2
-                self.isg_weights = dynerf_isg_weight(
-                    imgs.view(-1, intrinsics.height, intrinsics.width, imgs.shape[-1]),
-                    median_imgs=self.median_imgs, gamma=gamma)
-                # Normalize into a probability distribution, to speed up sampling
-                self.isg_weights = (self.isg_weights.reshape(-1) / torch.sum(self.isg_weights))
-                torch.save(self.isg_weights, os.path.join(datadir, isg_weight_name))
-                t_e = time.time()
-                log.info(f"Computed {self.isg_weights.shape[0]} ISG weights in {t_e - t_s:.2f}s.")
-
-            ist_weight_name = f"ist_weights_{selection}.pt" if selection is not None else "ist_weights.pt"
-            if os.path.exists(os.path.join(datadir, ist_weight_name)):
-                self.ist_weights = torch.load(os.path.join(datadir, ist_weight_name))
-                log.info(f"Reloaded {self.ist_weights.shape[0]} IST weights from file.")
-            else:
-                # Precompute IST weights
-                t_s = time.time()
-                self.ist_weights = dynerf_ist_weight(
-                    imgs.view(-1, self.img_h, self.img_w, imgs.shape[-1]),
-                    num_cameras=self.median_imgs.shape[0])
-                # Normalize into a probability distribution, to speed up sampling
-                self.ist_weights = (self.ist_weights.reshape(-1) / torch.sum(self.ist_weights))
-                torch.save(self.ist_weights, os.path.join(datadir, ist_weight_name))
-                t_e = time.time()
-                log.info(f"Computed {self.ist_weights.shape[0]} IST weights in {t_e - t_s:.2f}s.")
-
         if self.isg:
             self.enable_isg()
+            self.isg_weights = None
+            self.ist_weights = None
+            if split == "train" and dset_type == 'llff':  # Only use importance sampling with DyNeRF videos
+                isg_weight_name = f"isg_weights_{selection}.pt" if selection is not None else "isg_weights.pt"
+                if os.path.exists(os.path.join(datadir, isg_weight_name)):
+                    self.isg_weights = torch.load(os.path.join(datadir, isg_weight_name))
+                    log.info(f"Reloaded {self.isg_weights.shape[0]} ISG weights from file.")
+                else:
+                    # Precompute ISG weights
+                    t_s = time.time()
+                    gamma = 1e-3 if self.keyframes else 2e-2
+                    self.isg_weights = dynerf_isg_weight(
+                        imgs.view(-1, intrinsics.height, intrinsics.width, imgs.shape[-1]),
+                        median_imgs=self.median_imgs, gamma=gamma)
+                    # Normalize into a probability distribution, to speed up sampling
+                    self.isg_weights = (self.isg_weights.reshape(-1) / torch.sum(self.isg_weights))
+                    torch.save(self.isg_weights, os.path.join(datadir, isg_weight_name))
+                    t_e = time.time()
+                    log.info(f"Computed {self.isg_weights.shape[0]} ISG weights in {t_e - t_s:.2f}s.")
+
+                ist_weight_name = f"ist_weights_{selection}.pt" if selection is not None else "ist_weights.pt"
+                if os.path.exists(os.path.join(datadir, ist_weight_name)):
+                    self.ist_weights = torch.load(os.path.join(datadir, ist_weight_name))
+                    log.info(f"Reloaded {self.ist_weights.shape[0]} IST weights from file.")
+                else:
+                    # Precompute IST weights
+                    t_s = time.time()
+                    self.ist_weights = dynerf_ist_weight(
+                        imgs.view(-1, self.img_h, self.img_w, imgs.shape[-1]),
+                        num_cameras=self.median_imgs.shape[0])
+                    # Normalize into a probability distribution, to speed up sampling
+                    self.ist_weights = (self.ist_weights.reshape(-1) / torch.sum(self.ist_weights))
+                    torch.save(self.ist_weights, os.path.join(datadir, ist_weight_name))
+                    t_e = time.time()
+                    log.info(f"Computed {self.ist_weights.shape[0]} IST weights in {t_e - t_s:.2f}s.")
+
 
         self.use_intrinsic = use_intrinsic
         if self.use_intrinsic:
