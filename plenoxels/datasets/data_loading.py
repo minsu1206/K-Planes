@@ -120,6 +120,8 @@ def _load_video_1cam(idx: int,
         all_frames = sorted(glob.glob(os.path.join(video_path, "*.png")))
     if len(all_frames) == 0:
         all_frames = sorted(glob.glob(os.path.join(video_path, "*.jpg")))
+    if len(all_frames) == 0:
+        all_frames = sorted(glob.glob(os.path.join(video_path, "frames2/*.png")))
     
     if len(all_frames) == 0:
         raise ValueError(f"No Images at {video_path}")

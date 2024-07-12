@@ -30,7 +30,7 @@ import os
 import cv2
 import numpy as np
 
-DOWNSAMPLES = 2
+DOWNSAMPLES = 4
 
 def extract_frames(video_path, output_folder):
     cap = cv2.VideoCapture(video_path)
@@ -38,7 +38,8 @@ def extract_frames(video_path, output_folder):
     count = 0
 
     while success:
-        ext = '.png' if "08" in output_folder else '.jpg'
+        # ext = '.png' if "08" in output_folder else '.jpg'
+        ext = '.png' if "00" in output_folder else ".jpg"
         frame_path = os.path.join(output_folder, f'{count:04d}{ext}')
         if DOWNSAMPLES != 1:
             frame = cv2.resize(frame, dsize=None, fx=1/DOWNSAMPLES, fy=1/DOWNSAMPLES)
@@ -66,7 +67,8 @@ def process_videos(root_folder):
             - 0001.jpg
             ...
     """
-    video_paths = glob.glob(os.path.join(root_folder, 'videos', '*.mp4'))
+    # video_paths = glob.glob(os.path.join(root_folder, 'videos', '*.mp4'))
+    video_paths = glob.glob(os.path.join(root_folder, "*.mp4"))
 
     for video_path in video_paths:
         video_name = os.path.basename(video_path).split('.mp4')[0]
@@ -159,16 +161,16 @@ def process_frames2(root_folder):
 
 if __name__ == "__main__":
 
-    # n3dv_root = '/workspace/dataset/samsung2024'
-    # for video_name in ['cook_spinach', 'cut_roasted_beef', 'flame_steak', 'flame_salmon_1', 'sear_steak']:
+    n3dv_root = '/workspace/dataset/N3DV'
+    for video_name in ['coffee_martini','cook_spinach', 'cut_roasted_beef', 'flame_steak', 'flame_salmon_1', 'sear_steak']:
     # for video_name in ['cook_spinach']:
-        # process_videos(os.path.join(n3dv_root, video_name))
-        # print("Done : ", video_name)
+        process_videos(os.path.join(n3dv_root, video_name))
+        print("Done : ", video_name)
 
-    stnerf_root = '/workspace/dataset/samsung2024'
-    for video_name in ['walking']:
-        process_frames2(os.path.join(stnerf_root, video_name))
-        print("Done : ",video_name)
+    # stnerf_root = '/workspace/dataset/samsung2024'
+    # for video_name in ['walking']:
+    #     process_frames2(os.path.join(stnerf_root, video_name))
+    #     print("Done : ",video_name)
 
     # root = '/workspace/dataset/samsung2024'
     # for video_name in ['room1', 'room2', 'room3', 'room4']:

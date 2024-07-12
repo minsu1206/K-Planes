@@ -36,7 +36,7 @@ class BaseTrainer(abc.ABC):
                  device: Union[str, torch.device],
                  **kwargs):
         self.train_data_loader = train_data_loader
-        self.num_steps = num_steps
+        self.num_steps = int(num_steps)
         self.train_fp16 = train_fp16
         self.save_every = save_every
         self.valid_every = valid_every

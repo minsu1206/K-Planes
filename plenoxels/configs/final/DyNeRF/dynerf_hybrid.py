@@ -10,7 +10,7 @@ config = {
  'ndc': True,
  'ndc_far': 2.6,
  'near_scaling': 0.95,
- 'isg': False,
+ 'isg': True,
  'isg_step': -1,
  'ist_step': 50000,
  'keyframes': False,
@@ -62,4 +62,6 @@ config = {
   'output_coordinate_dim': 16,
   'resolution': [64, 64, 64, 150]
  }],
+
+ 'use_intrinsic': False
 }

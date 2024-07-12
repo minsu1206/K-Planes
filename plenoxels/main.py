@@ -132,7 +132,8 @@ def main():
                 name=f"{config['expname']}_useK={config['use_intrinsic']}", 
                 sync_tensorboard=True)
 
-    # config['data_dirs'] = [config['data_dirs'][0] + config['expname']]
+    config['data_dirs'] = [config['data_dirs'][0] + config['expname']]
+
     if "keyframes" in config:
         model_type = "video"
     elif "appearance_embedding_dim" in config:
