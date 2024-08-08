@@ -1,0 +1,10 @@
+#!/bin/bash
+
+# PYTHONPATH='.' python plenoxels/main.py --device 0 --config-path plenoxels/configs/final/ST-NeRF/stnerf_hybrid_walking.py data_downsample=2 expname="stnerf-full-walking" pose_npy_suffix="kplanes_v7" selection=[[0,1,2,3,4,5,6,8,9,10,11,12,13,14,15],7]
+# PYTHONPATH='.' python plenoxels/main.py --device 0 --config-path plenoxels/configs/final/ST-NeRF/stnerf_hybrid_walking.py --validate-only --log-dir logs/full/stnerf-full-walking expname=stnerf-full-walking pose_npy_suffix="kplanes_v7" selection=[[0,1,2,3,4,5,6,8,9,10,11,12,13,14,15],7] num_steps=1 data_downsample=2
+PYTHONPATH='.' python plenoxels/main.py --device 0 --config-path plenoxels/configs/final/ST-NeRF/stnerf_hybrid_walking.py --render-only --log-dir logs/full/stnerf-full-walking expname=stnerf-full-walking pose_npy_suffix="kplanes_v7" selection=[[0,1,2,3,4,5,6,8,9,10,11,12,13,14,15],7] num_steps=1 data_downsample=2
+
+# PYTHONPATH='.' python plenoxels/main.py --device 0 --config-path plenoxels/configs/final/ST-NeRF/stnerf_hybrid_taekwondo.py data_downsample=4 expname="stnerf-full-taekwondo" pose_npy_suffix="kplanes_v7" selection=[[0,1,2,3,4,5,6,8,9,10,11,12,13,14],7] num_steps=1
+# PYTHONPATH='.' python plenoxels/main.py --device 0 --config-path plenoxels/configs/final/ST-NeRF/stnerf_hybrid_taekwondo.py data_downsample=2 expname="stnerf-full-taekwondo" pose_npy_suffix="kplanes_v7" selection=[[0,1,2,3,4,5,6,8,9,10,11,12,13,14],7]
+# PYTHONPATH='.' python plenoxels/main.py --device 0 --config-path plenoxels/configs/final/ST-NeRF/stnerf_hybrid_taekwondo.py --validate-only --log-dir logs/full/stnerf-full-taekwondo expname=stnerf-full-taekwondo pose_npy_suffix="kplanes_v7" selection=[[0,1,2,3,4,5,6,8,9,10,11,12,13,14],7] num_steps=1 data_downsample=2
+# PYTHONPATH='.' python plenoxels/main.py --device 0 --config-path plenoxels/configs/final/ST-NeRF/stnerf_hybrid_taekwondo.py --render-only --log-dir logs/full/stnerf-full-taekwondo expname=stnerf-full-taekwondo pose_npy_suffix="kplanes_v7" selection=[[0,1,2,3,4,5,6,8,9,10,11,12,13,14],7] num_steps=1 data_downsample=2

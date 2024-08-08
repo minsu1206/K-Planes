@@ -132,7 +132,7 @@ def main():
                 name=f"{config['expname']}_useK={config['use_intrinsic']}", 
                 sync_tensorboard=True)
 
-    config['data_dirs'] = [config['data_dirs'][0] + config['expname']]
+    # config['data_dirs'] = [config['data_dirs'][0] + config['expname']]
 
     if "keyframes" in config:
         model_type = "video"
@@ -156,7 +156,8 @@ def main():
 
     pprint.pprint(config)
     if validate_only or render_only or render_only_arc:
-        assert args.log_dir is not None and os.path.isdir(args.log_dir)
+        if not (args.log_dir is not None and os.path.isdir(args.log_dir)):
+            raise ValueError("[ERROR] : wrong log_dir = ", args.log_dir)
     else:
         save_config(config)
 

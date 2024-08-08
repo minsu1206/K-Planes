@@ -136,6 +136,11 @@ def load_llff_poses_helper(datadir: str, downsample: float, near_scaling: float,
     # Step 2: correct poses
     # Original poses has rotation in form "down right back", change to "right up back"
     # See https://github.com/bmild/nerf/issues/34
+
+    if cam_scale is not None:
+        print(f"[INFO] : llff_dataset.py / load_llff_pose_helper : forcing cam scaling : x{cam_scale}")
+        poses[..., 3] *= cam_scale
+    
     poses = np.concatenate([poses[..., 1:2], -poses[..., :1], poses[..., 2:4]], -1)
     # (N_images, 3, 4) exclude H, W, focal
     poses, pose_avg = center_poses(poses)
@@ -147,9 +152,7 @@ def load_llff_poses_helper(datadir: str, downsample: float, near_scaling: float,
     # the nearest depth is at 1/0.75=1.33
     near_fars /= scale_factor
     poses[..., 3] /= scale_factor
-    if cam_scale is not None:
-        print(f"[INFO] : llff_dataset.py / load_llff_pose_helper : forcing cam scaling : x{cam_scale}")
-        poses[..., 3] *= cam_scale
+    
     # print(f'[INFO] : near_fars /= scale_factor :', near_fars, scale_factor) # [nan, inf]
     return poses, near_fars, intrinsics
 

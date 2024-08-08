@@ -111,6 +111,7 @@ class VideoTrainer(BaseTrainer):
         pred_frames, out_depths = [], []
         pb = tqdm(total=len(dataset), desc=f"Test scene ({dataset.name})")
         for img_idx, data in enumerate(dataset):
+            # print(data)
             preds = self.eval_step(data)
             out_metrics, out_img, out_depth = self.evaluate_metrics(
                 data["imgs"], preds, dset=dataset, img_idx=img_idx, name=None,
@@ -264,7 +265,7 @@ def init_tr_data(data_downsample, data_dir, **kwargs):
     g = torch.Generator()
     g.manual_seed(0)
     tr_loader = torch.utils.data.DataLoader(
-        tr_dset, batch_size=None, num_workers=4,  prefetch_factor=4, pin_memory=True,
+        tr_dset, batch_size=None, num_workers=0, pin_memory=True, # prefetch_factor=4, 
         worker_init_fn=init_dloader_random, generator=g)
     return {"tr_loader": tr_loader, "tr_dset": tr_dset}
 

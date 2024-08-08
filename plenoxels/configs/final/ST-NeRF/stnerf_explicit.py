@@ -1,23 +1,23 @@
 config = {
- 'expname': 'cutbeef_hybrid',
- 'logdir': './logs/sparse4',
+ 'expname': 'cutbeef_explicit',
+ 'logdir': './logs/realdynamic',
  'device': 'cuda:0',
 
  # Run first for 1 step with data_downsample=4 to generate weights for ray importance sampling
- 'data_downsample': 1,
- 'data_dirs': ['/workspace/lustre/datasets/nerf_team/n3dv/'],
+ 'data_downsample': 2,
+ 'data_dirs': ['data/dynerf/cut_roasted_beef'],
  'contract': False,
  'ndc': True,
  'ndc_far': 2.6,
  'near_scaling': 0.95,
- 'isg': True,
+ 'isg': False,
  'isg_step': -1,
  'ist_step': 50000,
  'keyframes': False,
  'scene_bbox': [[-3.0, -1.8, -1.2], [3.0, 1.8, 1.2]],
 
  # Optimization settings
- 'num_steps': 90001,
+ 'num_steps': 120001,
  'batch_size': 4096,
  'scheduler_type': 'warmup_cosine',
  'optim_type': 'adam',
@@ -28,8 +28,8 @@ config = {
  'histogram_loss_weight': 1.0,
  'l1_time_planes': 0.0001,
  'l1_time_planes_proposal_net': 0.0001,
- 'plane_tv_weight': 0.0002,
- 'plane_tv_weight_proposal_net': 0.0002,
+ 'plane_tv_weight': 0.0001,
+ 'plane_tv_weight_proposal_net': 0.0001,
  'time_smoothness_weight': 0.001,
  'time_smoothness_weight_proposal_net': 1e-05,
 
@@ -54,14 +54,13 @@ config = {
  # Model settings
  'concat_features_across_scales': True,
  'density_activation': 'trunc_exp',
- 'linear_decoder': False,
+ 'linear_decoder': True,
+ 'linear_decoder_layers': 1,
  'multiscale_res': [1, 2, 4, 8],
  'grid_config': [{
   'grid_dimensions': 2,
   'input_coordinate_dim': 4,
-  'output_coordinate_dim': 16,
+  'output_coordinate_dim': 32,
   'resolution': [64, 64, 64, 150]
  }],
-
- 'use_intrinsic': False
 }

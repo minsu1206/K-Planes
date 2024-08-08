@@ -1,11 +1,11 @@
 config = {
- 'expname': 'cutbeef_hybrid',
- 'logdir': './logs/sparse4',
+ 'expname': 'stnerf_walking',
+ 'logdir': './logs/full',
  'device': 'cuda:0',
 
  # Run first for 1 step with data_downsample=4 to generate weights for ray importance sampling
  'data_downsample': 1,
- 'data_dirs': ['/workspace/lustre/datasets/nerf_team/n3dv/'],
+ 'data_dirs': ['/workspace/lustre/datasets/nerf_team/walking'],
  'contract': False,
  'ndc': True,
  'ndc_far': 2.6,
@@ -14,6 +14,7 @@ config = {
  'isg_step': -1,
  'ist_step': 50000,
  'keyframes': False,
+ 'cam_scale': 1.0,
  'scene_bbox': [[-3.0, -1.8, -1.2], [3.0, 1.8, 1.2]],
 
  # Optimization settings

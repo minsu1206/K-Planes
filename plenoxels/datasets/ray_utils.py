@@ -102,6 +102,15 @@ def get_rays(directions: torch.Tensor,
         c2w = c2w[None, ...]
     rd = (directions[:, None, :] * c2w[:, :3, :3]).sum(dim=-1)
     ro = torch.broadcast_to(c2w[:, :3, 3], directions.shape)
+    # print("[DEBUG] : c2w[:, :3, 3] = ", c2w[:, :3, 3].isnan().sum(), c2w[:, :3, 3].sum())
+    # print("[DEBUG] : ", rd[..., 2].sum(), ro[..., 2].sum())
+    if torch.isnan(rd).sum() > 0:
+        raise ValueError("[ERROR] : get_rays ray origin is None ?! = ", torch.isnan(rd).sum() / rd.numel())
+    if torch.isnan(ro).sum() > 0:
+        raise ValueError("[ERROR] : get_rays ray direction is None ?! = ", torch.isnan(ro).sum() / ro.numel())
+    # if torch.isnan(ndc_near).sum() > 0:
+    #     raise ValueError("[ERROR] : get_rays ndc_near is None ?! = ", torch.isnan(ndc_near).sum() / ndc_near.numel())
+
     if ndc:
         assert intrinsics is not None, "intrinsics must not be None when NDC active."
         ro, rd = ndc_rays_blender(
@@ -114,9 +123,10 @@ def get_rays(directions: torch.Tensor,
 def ndc_rays_blender(intrinsics: Intrinsics, near: float, rays_o: torch.Tensor,
                      rays_d: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
     # Shift ray origins to near plane
+    # print("[DEBUG] : rays_o[..., 2] = ", rays_o[..., 2].sum())
     t = -(near + rays_o[..., 2]) / rays_d[..., 2]
     rays_o = rays_o + t[..., None] * rays_d
-
+    # print("[DEBUG] : rays_o[..., 2] = ", rays_o[..., 2].sum())
     # Projection
     # print(f"[DEBUG] : ray_utils.py / ncd_rays_blender : ", rays_o.shape, rays_d.shape) # (4096,3) , (4096, 3)
     # 0201------------------------------------------------------------------------- #
@@ -127,6 +137,15 @@ def ndc_rays_blender(intrinsics: Intrinsics, near: float, rays_o: torch.Tensor,
         ndc_coef_x = - intrinsics[:, 0] / intrinsics[:,2]   # NOTE: assume width = center_x * 2
         ndc_coef_y = - intrinsics[:, 1] / intrinsics[:,3]   # NOTE: assume height = center_y * 2
     # ----------------------------------------------------------------------------- #
+    
+    # if torch.isnan(ndc_coef_x).sum() > 0:
+    #     raise ValueError("[ERROR] : ndc_coef_x is None ?! = ", torch.isnan(ndc_coef_x).sum() / ndc_coef_x.numel())
+    # if torch.isnan(ndc_coef_y).sum() > 0:
+    #     raise ValueError("[ERROR] : ndc_coef_y is None ?! = ", torch.isnan(ndc_coef_y).sum() / ndc_coef_y.numel())
+    # print("[DEBUG] : ndc_coef_x = ", ndc_coef_x, "ndc_coef_y = ", ndc_coef_y)
+    # print("[DEBUG] : rays_o[..., 2] = ", rays_o[..., 2].sum())
+    # print("[DEBUG] : rays_d[..., 2] = ", rays_d[..., 2].sum())
+
     o0 = ndc_coef_x * rays_o[..., 0] / rays_o[..., 2]
     o1 = ndc_coef_y * rays_o[..., 1] / rays_o[..., 2]
     o2 = 1. + 2. * near / rays_o[..., 2]

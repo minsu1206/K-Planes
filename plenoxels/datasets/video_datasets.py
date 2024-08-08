@@ -169,6 +169,8 @@ class Video360Dataset(BaseDataset):
             self.timestamps = self.timestamps[:, None, None].repeat(
                 1, intrinsics.height, intrinsics.width).reshape(-1)  # [n_frames * h * w]
         assert self.timestamps.min() >= -1.0 and self.timestamps.max() <= 1.0, "timestamps out of range."
+        # print("[DEBUG] : intermediate imgs = ", imgs.shape)
+
         if imgs is not None and imgs.dtype != torch.uint8:
             imgs = (imgs * 255).to(torch.uint8)
         if self.median_imgs is not None and self.median_imgs.dtype != torch.uint8:
@@ -332,7 +334,8 @@ class Video360Dataset(BaseDataset):
             out['near_fars'] = self.per_cam_near_fars[camera_id, :]
         else:
             out['near_fars'] = self.per_cam_near_fars  # Only one test camera
-
+        
+        # print(f"[DEBUG] : Video360Dataset : {self.split} / {out['near_fars'].shape}")
         if self.imgs is not None:
             out['imgs'] = (self.imgs[index] / 255.0).view(-1, self.imgs.shape[-1])
         
@@ -348,6 +351,10 @@ class Video360Dataset(BaseDataset):
             camera_dirs, c2w, ndc=self.is_ndc, intrinsics=intrinsic_input,
             normalize_rd=True)                                        # [num_rays, 3]
         # ----------------------------------------------------------------------------- #
+        if torch.isnan(out['rays_o']).sum() > 0:
+            raise ValueError("[ERROR] : ray origin is None ?! = ", torch.isnan(out['rays_o']).sum() / out['rays_o'].numel())
+        if torch.isnan(out['rays_d']).sum() > 0:
+            raise ValueError("[ERROR] : ray direction is None ?! = ", torch.isnan(out['rays_d']).sum() / out['rays_d'].numel())
 
         imgs = out['imgs']
         # Decide BG color
@@ -469,9 +476,13 @@ def load_llffvideo_poses(datadir: str,
     videopaths = []
     if len(videopaths) == 0:
         print(f"[INFO] : video_datasets.py / load_llff_poses : set video/image path")
-        print(" "*10, os.path.join(datadir, f"frames{int(downsample)}"))
-        videopaths = np.array(glob.glob(os.path.join(datadir, f"frames{int(downsample)}/*")))
+        # print(" "*10, os.path.join(datadir, f"frames{int(downsample)}"))
+        # videopaths = np.array(glob.glob(os.path.join(datadir, f"frames{int(downsample)}/*")))
+        print(" "*10, os.path.join(datadir, f"images_{int(downsample)}"))
+        videopaths = np.array(glob.glob(os.path.join(datadir, f"images_{int(downsample)}/*")))
     
+    print("pose_selection = ", pose_selection)
+
     if pose_selection is None:
         assert poses.shape[0] == len(videopaths), \
             f'Mismatch between number of cameras and number of poses! : {poses.shape[0]} != {len(videopaths)}'
@@ -515,7 +526,17 @@ def load_llffvideo_poses(datadir: str,
     poses = torch.from_numpy(poses[pose_split_ids])
     near_fars = torch.from_numpy(near_fars[pose_split_ids])
     videopaths = videopaths[split_ids].tolist()
-
+    print("[DEBUG] : splitted videos : ", videopaths)
+    # WARNING: for st-nerf dataset
+    if isinstance(videopaths, str): 
+        videopaths = [videopaths] # when test case ...
+    if len(poses.shape) == 2:
+        poses = poses[None]
+    # if len(near_fars.shape) == 2:
+    #     near_fars = near_fars[None]
+    if split == "test":
+        near_fars = near_fars[None]
+    print(f"[DEBUG] : poses.shape = {poses} / near_far.shape = {near_fars}")
     return poses, near_fars, intrinsics, videopaths
 
 

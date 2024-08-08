@@ -117,11 +117,12 @@ def _load_video_1cam(idx: int,
     if len(all_frames) == 0:
         all_frames = sorted(glob.glob(os.path.join(video_path, "images/*.png")))
     if len(all_frames) == 0:
+        print("[INFO] : ST-NeRF data architecture (0807)")
         all_frames = sorted(glob.glob(os.path.join(video_path, "*.png")))
-    if len(all_frames) == 0:
-        all_frames = sorted(glob.glob(os.path.join(video_path, "*.jpg")))
-    if len(all_frames) == 0:
-        all_frames = sorted(glob.glob(os.path.join(video_path, "frames2/*.png")))
+    # if len(all_frames) == 0:
+    #     all_frames = sorted(glob.glob(os.path.join(video_path, "*.jpg")))
+    # if len(all_frames) == 0:
+    #     all_frames = sorted(glob.glob(os.path.join(video_path, "frames2/*.png")))
     
     if len(all_frames) == 0:
         raise ValueError(f"No Images at {video_path}")
@@ -142,6 +143,7 @@ def _load_video_1cam(idx: int,
     imgs = torch.stack(imgs, 0)
     med_img, _ = torch.median(imgs, dim=0)  # [h, w, 3]
     print(f"[INFO] : data_loading.py / _load_video_1cam : {video_path} > loading done")
+    print(f"[DEBUG] : poses.shape = {poses.shape} / imgs.shape = {imgs.shape} / torch.tensor(timestamps).shape = {torch.tensor(timestamps).shape}")
     return (imgs,
             poses[idx].expand(len(timestamps), -1, -1),
             med_img,
